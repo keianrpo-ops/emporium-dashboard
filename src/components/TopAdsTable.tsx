@@ -1,6 +1,6 @@
 // src/components/TopAdsTable.tsx
 import React from 'react';
-import { TopAdRow } from '../types';
+import type { TopAdRow } from '../types';
 
 interface Props {
   title: string;

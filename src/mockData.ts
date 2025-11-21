@@ -1,5 +1,5 @@
 // src/mockData.ts
-import { Kpi, TopAdRow } from './types';
+import type { Kpi, TopAdRow } from './types';
 
 export const kpisMock: Kpi[] = [
   { id: 'ingreso', label: 'Ingreso total (rango)', value: 1359670, currency: true },

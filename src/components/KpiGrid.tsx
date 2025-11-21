@@ -1,6 +1,6 @@
 // src/components/KpiGrid.tsx
 import React from 'react';
-import { Kpi } from '../types';
+import type { Kpi } from '../types';
 
 interface Props {
   kpis: Kpi[];

@@ -1,12 +1,4 @@
-import React from "react";
+// src/pages/dashboard/index.tsx
+import DashboardHome from './DashboardHome';
 
-export default function DashboardPage() {
-  return (
-    <div style={{ padding: "40px", color: "#fff" }}>
-      <h1 style={{ fontSize: "32px", fontWeight: "bold" }}>
-        Dashboard general
-      </h1>
-      <p>Tu integración con Google Sheets se configurará aquí.</p>
-    </div>
-  );
-}
+export default DashboardHome;

@@ -28,7 +28,7 @@ const DashboardHome = () => {
     load();
   }, []);
 
-  // 👉 Ajusta aquí el nombre de la columna según tu hoja.
+  // 👉 Ajusta aquí el nombre de la columna si fuera necesario.
   // En el JSON que vimos venía como "Valor_Venta".
   const totalVentasReal = ventas.reduce(
     (acc: number, row: any) => {
@@ -39,19 +39,11 @@ const DashboardHome = () => {
     0
   );
 
-  // Formateamos al estilo de tus KPIs mock ("$ 1.359.670")
-  const totalVentasFormateado =
-    totalVentasReal > 0
-      ? `$ ${totalVentasReal.toLocaleString('es-CO')}`
-      : kpisMock[0].value;
-
-  // Usamos el mismo shape de Kpi que kpisMock: solo
-  // sobreescribimos el value del primer KPI, los demás
-  // quedan iguales de momento.
+  // Dejamos el value como NÚMERO (Kpi.value es number)
   const kpis = [
     {
       ...kpisMock[0],
-      value: totalVentasFormateado,
+      value: totalVentasReal > 0 ? totalVentasReal : kpisMock[0].value,
     },
     kpisMock[1],
     kpisMock[2],

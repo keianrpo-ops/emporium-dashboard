@@ -1,11 +1,11 @@
 // src/pages/DashboardHome.tsx
 import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
-import DateRangeBar from '../components/DateRangeBar';
-import KpiGrid from '../components/KpiGrid';
-import TopAdsTable from '../components/TopAdsTable';
-import { fetchSheet } from '../services/googleSheetsService';
-import { kpisMock, topAdsBySalesMock } from '../mockData';
+import Layout from '../../components/Layout';
+import DateRangeBar from '../../components/DateRangeBar';
+import KpiGrid from '../../components/KpiGrid';
+import TopAdsTable from '../../components/TopAdsTable';
+import { fetchSheet } from '../../services/googleSheetsService';
+import { kpisMock, topAdsBySalesMock } from '../../mockData';
 
 const DashboardHome = () => {
   const [ventas, setVentas] = useState<any[]>([]);

@@ -1,101 +1,25 @@
 // src/pages/DashboardHome.tsx
-import React, { useEffect, useState } from "react";
-import Layout from "../components/Layout";
-import DateRangeBar from "../components/DateRangeBar";
-import KpiGrid from "../components/KpiGrid";
-import TopAdsTable from "../components/TopAdsTable";
+import { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import DateRangeBar from '../components/DateRangeBar';
+import KpiGrid from '../components/KpiGrid';
+import TopAdsTable from '../components/TopAdsTable';
+import { fetchSheet } from '../services/googleSheetsService';
+import { kpisMock, topAdsBySalesMock } from '../mockData';
 
-import { fetchSheet } from "../services/googleSheetsService";
-import { formatCurrency } from "../utils/sheetsCalculations";
-
-import { topAdsBySalesMock } from "../mockData"; // Temporal mientras creamos ranking real
-
-const DashboardHome: React.FC = () => {
+const DashboardHome = () => {
   const [ventas, setVentas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [kpis, setKpis] = useState([
-    { title: "Ingreso total (rango)", value: 0 },
-    { title: "Costo producto", value: 0 },
-    { title: "Costo empaque", value: 0 },
-    { title: "Costo envío", value: 0 },
-    { title: "Comisiones plataforma", value: 0 },
-    { title: "Costo publicidad", value: 0 },
-    { title: "Utilidad bruta total", value: 0 },
-    { title: "Utilidad neta final", value: 0 },
-  ]);
-
-  // ---------------------------------------------------------
-  // 🟦 1. Cargar datos reales desde Google Sheets
-  // ---------------------------------------------------------
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchSheet("Ventas");
+        const data = await fetchSheet('Ventas'); // hoja "Ventas"
         setVentas(data);
-
-        // ---------------------------------------------------------
-        // 🟩 2. Convertir valores numéricos
-        // ---------------------------------------------------------
-        const toNumber = (v: any) => Number(String(v).replace(/[^0-9.-]/g, "")) || 0;
-
-        const ingresoTotal = data.reduce(
-          (acc, row) => acc + toNumber(row.Valor_Venta),
-          0
-        );
-
-        const costoProducto = data.reduce(
-          (acc, row) => acc + toNumber(row.Costo_Producto),
-          0
-        );
-
-        const costoEmpaque = data.reduce(
-          (acc, row) => acc + toNumber(row.Costo_Empaque),
-          0
-        );
-
-        const costoEnvio = data.reduce(
-          (acc, row) => acc + toNumber(row.Costo_Envio),
-          0
-        );
-
-        const costoPublicidad = data.reduce(
-          (acc, row) => acc + toNumber(row.Costo_Publicidad),
-          0
-        );
-
-        const comisiones = data.reduce(
-          (acc, row) => acc + toNumber(row.Comisiones_Plataforma),
-          0
-        );
-
-        const utilidadBruta = ingresoTotal - costoProducto - costoEmpaque;
-
-        const utilidadNeta =
-          ingresoTotal -
-          (costoProducto +
-            costoEmpaque +
-            costoEnvio +
-            costoPublicidad +
-            comisiones);
-
-        // ---------------------------------------------------------
-        // 🟦 3. Actualizar KPIs reales
-        // ---------------------------------------------------------
-        setKpis([
-          { title: "Ingreso total (rango)", value: ingresoTotal },
-          { title: "Costo producto", value: costoProducto },
-          { title: "Costo empaque", value: costoEmpaque },
-          { title: "Costo envío", value: costoEnvio },
-          { title: "Comisiones plataforma", value: comisiones },
-          { title: "Costo publicidad", value: costoPublicidad },
-          { title: "Utilidad bruta total", value: utilidadBruta },
-          { title: "Utilidad neta final", value: utilidadNeta },
-        ]);
-      } catch (err) {
-        console.error(err);
-        setError("No fue posible leer la hoja 'Ventas'.");
+      } catch (e) {
+        console.error(e);
+        setError('No pudimos leer los datos de Google Sheets.');
       } finally {
         setLoading(false);
       }
@@ -104,41 +28,68 @@ const DashboardHome: React.FC = () => {
     load();
   }, []);
 
-  // ---------------------------------------------------------
-  // 🟦 4. Formatear KPIs para el componente (tu KpiGrid lo necesita así)
-  // ---------------------------------------------------------
-  const formattedKpis = kpis.map((k) => ({
-    ...k,
-    value: formatCurrency(k.value),
-  }));
+  // 👉 Ajusta aquí el nombre de la columna según tu hoja.
+  // En el JSON que vimos venía como "Valor_Venta".
+  const totalVentasReal = ventas.reduce(
+    (acc: number, row: any) => {
+      const bruto = Number(row.Valor_Venta || 0);
+      if (isNaN(bruto)) return acc;
+      return acc + bruto;
+    },
+    0
+  );
+
+  // Formateamos al estilo de tus KPIs mock ("$ 1.359.670")
+  const totalVentasFormateado =
+    totalVentasReal > 0
+      ? `$ ${totalVentasReal.toLocaleString('es-CO')}`
+      : kpisMock[0].value;
+
+  // Usamos el mismo shape de Kpi que kpisMock: solo
+  // sobreescribimos el value del primer KPI, los demás
+  // quedan iguales de momento.
+  const kpis = [
+    {
+      ...kpisMock[0],
+      value: totalVentasFormateado,
+    },
+    kpisMock[1],
+    kpisMock[2],
+    kpisMock[3],
+    kpisMock[4],
+    kpisMock[5],
+    kpisMock[6],
+    kpisMock[7],
+  ];
 
   return (
     <Layout>
       <DateRangeBar />
+      <KpiGrid kpis={kpis} />
 
-      {/* KPIs reales */}
-      <KpiGrid kpis={formattedKpis} />
-
-      {/* Indicadores extra */}
       <div className="grid-2">
         <div className="card card--placeholder">
           <div className="card-title">Estructura de costos vs utilidad</div>
-          <p>Aún no hay datos para graficar (conectaremos después).</p>
+          <p>
+            Aún no hay datos para graficar (conectaremos con Google Sheets
+            después).
+          </p>
         </div>
 
         <div className="card card--placeholder">
           <div className="card-title">Indicadores clave</div>
-          <p>Margen bruto, margen neto y peso de la publicidad sobre el ingreso.</p>
+          <p>
+            Margen bruto, margen neto y peso de la publicidad sobre el ingreso.
+          </p>
         </div>
       </div>
 
-      {/* Tabla mock mientras conecto los anuncios reales */}
       <TopAdsTable title="Top 10 anuncios por ventas" rows={topAdsBySalesMock} />
 
-      {/* Estado del sistema */}
+      {/* Estado de carga / error */}
       <div style={{ marginTop: 24, fontSize: 12, opacity: 0.7 }}>
-        {loading && <span>Cargando datos en tiempo real...</span>}
-        {error && <span style={{ color: "#ff6b6b" }}>{error}</span>}
+        {loading && <span>Actualizando datos desde Google Sheets...</span>}
+        {error && <span style={{ color: '#f87171' }}>{error}</span>}
         {!loading && !error && (
           <span>
             Fuente: {ventas.length} filas leídas desde la hoja <b>"Ventas"</b>.

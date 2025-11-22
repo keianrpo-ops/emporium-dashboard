@@ -1,31 +1,32 @@
 // src/App.tsx
 import React from 'react';
-import Layout from './components/Layout';
-import DateRangeBar from './components/DateRangeBar';
-import KpiGrid from './components/KpiGrid';
-import TopAdsTable from './components/TopAdsTable';
-import { kpisMock, topAdsBySalesMock } from './mockData';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import DashboardHome from './pages/DashboardHome';
+import VentasPage from './pages/VentasPage';
+import CampanasPage from './pages/CampanasPage';
+import TarjetasPage from './pages/TarjetasPage';
+import ConfiguracionPage from './pages/ConfiguracionPage';
+import TestSheets from './pages/TestSheets';
 
 const App: React.FC = () => {
   return (
-    <Layout>
-      <DateRangeBar />
-      <KpiGrid kpis={kpisMock} />
+    <BrowserRouter>
+      <Routes>
+        {/* Dashboard principal */}
+        <Route path="/" element={<DashboardHome />} />
+        <Route path="/dashboard" element={<DashboardHome />} />
 
-      <div className="grid-2">
-        <div className="card card--placeholder">
-          <div className="card-title">Estructura de costos vs utilidad</div>
-          <p>Aún no hay datos para graficar (conectaremos con Google Sheets después).</p>
-        </div>
+        {/* Secciones del panel */}
+        <Route path="/ventas" element={<VentasPage />} />
+        <Route path="/campanas" element={<CampanasPage />} />
+        <Route path="/tarjetas" element={<TarjetasPage />} />
+        <Route path="/configuracion" element={<ConfiguracionPage />} />
 
-        <div className="card card--placeholder">
-          <div className="card-title">Indicadores clave</div>
-          <p>Margen bruto, margen neto y peso de la publicidad sobre el ingreso.</p>
-        </div>
-      </div>
-
-      <TopAdsTable title="Top 10 anuncios por ventas" rows={topAdsBySalesMock} />
-    </Layout>
+        {/* Pruebas con Google Sheets */}
+        <Route path="/test-sheets" element={<TestSheets />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

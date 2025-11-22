@@ -15,27 +15,52 @@ export type SheetName =
 
 if (!API_URL) {
   console.warn(
-    'VITE_API_URL no está definida. Revisa las variables de entorno en Vercel.'
+    'VITE_API_URL no está definida. Revisa las variables de entorno (.env.local en dev y Vercel en producción).'
   );
 }
 
-/**
- * Lee una hoja del Google Sheets y devuelve un arreglo de objetos.
- * Cada objeto tiene como claves los encabezados de la fila 1.
- */
-export async function fetchSheet<T = any>(
-  sheetName: SheetName
-): Promise<T[]> {
-  if (!API_URL) return [];
+// =====================================================
+// 🔹 Leer una hoja completa (DEVUELVE SIEMPRE UN ARRAY)
+// =====================================================
+export async function fetchSheet(sheet: SheetName) {
+  try {
+    const res = await fetch(`${API_URL}/sheets?sheet=${sheet}`);
 
-  const url = `${API_URL}?sheet=${encodeURIComponent(sheetName)}`;
+    if (!res.ok) {
+      console.error('❌ Error HTTP leyendo hoja', sheet, await res.text());
+      return [];
+    }
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    console.error('Error al leer la hoja', sheetName, res.status, res.statusText);
+    const data = await res.json();
+
+    // 🔥 Tu backend SIEMPRE devuelve { rows: [...] }
+    if (data && Array.isArray(data.rows)) {
+      return data.rows;
+    }
+
+    console.error('⚠️ Respuesta inesperada del backend:', data);
+    return [];
+  } catch (err) {
+    console.error('❌ Error de red leyendo hoja', sheet, err);
     return [];
   }
+}
 
-  const data = (await res.json()) as T[];
-  return data;
+// =====================================================
+// 🔹 Agregar una fila a una hoja
+// =====================================================
+export async function addToSheet(sheet: SheetName, row: Record<string, any>) {
+  const res = await fetch(`${API_URL}/sheets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sheet, row }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      `Error al agregar fila en ${sheet}: ${await res.text()}`
+    );
+  }
+
+  return res.json();
 }

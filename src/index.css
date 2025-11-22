@@ -53,6 +53,24 @@ body {
   color: #9ca3af;
 }
 
+
+/* por ejemplo en src/index.css o donde tengas los estilos globales */
+.sidebar-item {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.sidebar-item--active {
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  color: #ffffff;
+}
+
+
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;

@@ -7,19 +7,19 @@ import KpiGrid from '../../components/KpiGrid';
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
 
-// Si ya no usas mocks, puedes borrar estas importaciones más adelante
+// Por ahora seguimos usando los mocks solo para estructura (id, icono, etc.)
 import { kpisMock, topAdsBySalesMock } from '../../mockData';
 
 // Tipo genérico de fila de la hoja "Ventas"
 type VentaRow = {
   [key: string]: any;
-  Valor_Venta?: string | number;
-  Costo_Proveedor?: string | number;
-  Costo_Envio?: string | number;
-  Costo_CPA?: string | number;
-  Costo_de_Venta?: string | number;
-  Costo_Producto?: string | number;
-  Utilidad?: string | number;
+  Valor_Venta?: string | number;      // P
+  Costo_Proveedor?: string | number;  // Q
+  Costo_Envio?: string | number;      // R
+  Costo_CPA?: string | number;        // S
+  Costo_de_Venta?: string | number;   // T
+  Costo_Producto?: string | number;   // U (ya con tu fórmula completa)
+  Utilidad?: string | number;         // V
 };
 
 // Convierte "220.000", "$450.000", etc. a number
@@ -71,17 +71,17 @@ const DashboardHome: React.FC = () => {
   }, []);
 
   // === SUMAS REALES (todas las filas) ===
-  const ingresoTotal      = sumByKey(ventas, 'Valor_Venta');      // P
-  const costoProveedor    = sumByKey(ventas, 'Costo_Proveedor');  // Q
-  const costoEnvio        = sumByKey(ventas, 'Costo_Envio');      // R
-  const costoPublicidad   = sumByKey(ventas, 'Costo_CPA');        // S (Ads / CPA)
-  const comisionesPlata   = sumByKey(ventas, 'Costo_de_Venta');   // T (plataforma / contraentrega)
-  const utilidadTotal     = sumByKey(ventas, 'Utilidad');         // V
+  const ingresoTotal        = sumByKey(ventas, 'Valor_Venta');      // P
+  const costoProductoTotal  = sumByKey(ventas, 'Costo_Producto');   // U (tu costo completo)
+  const costoEnvioTotal     = sumByKey(ventas, 'Costo_Envio');      // R
+  const costoPublicidadTotal= sumByKey(ventas, 'Costo_CPA');        // S
+  const comisionesPlataTotal= sumByKey(ventas, 'Costo_de_Venta');   // T
+  const utilidadBrutaTotal  = sumByKey(ventas, 'Utilidad');         // V
 
-  // Si quieres una "utilidad neta" igual a bruta por ahora:
-  const utilidadNeta = utilidadTotal;
+  // Si por ahora la utilidad neta = utilidad bruta:
+  const utilidadNetaTotal = utilidadBrutaTotal;
 
-  // === KPIs DEL DASHBOARD (ya sin números fijos) ===
+  // === KPIs DEL DASHBOARD (ya con datos reales) ===
   const kpis = [
     {
       ...kpisMock[0],
@@ -92,41 +92,40 @@ const DashboardHome: React.FC = () => {
     {
       ...kpisMock[1],
       label: 'Costo producto',
-      value: costoProveedor,
+      // ⚠️ Aquí usamos el costo completo por producto (columna U)
+      value: costoProductoTotal,
       currency: true,
     },
     {
       ...kpisMock[2],
       label: 'Costo envío',
-      value: costoEnvio,
+      value: costoEnvioTotal,
       currency: true,
     },
     {
       ...kpisMock[3],
       label: 'Comisiones plataforma',
-      value: comisionesPlata,
+      value: comisionesPlataTotal,
       currency: true,
     },
     {
       ...kpisMock[4],
       label: 'Costo publicidad',
-      value: costoPublicidad,
+      value: costoPublicidadTotal,
       currency: true,
     },
     {
       ...kpisMock[5],
       label: 'Utilidad bruta total',
-      value: utilidadTotal,
+      value: utilidadBrutaTotal,
       currency: true,
     },
     {
       ...kpisMock[6],
       label: 'Utilidad neta final',
-      value: utilidadNeta,
+      value: utilidadNetaTotal,
       currency: true,
     },
-    // Si quieres dejar un KPI libre para otra cosa,
-    // puedes poner 0 o algo temporal:
     {
       ...kpisMock[7],
       label: 'KPI libre',

@@ -38,6 +38,8 @@ type VentaRow = {
   Costo_CPA?: string | number;
   Costo_de_Venta?: string | number;
   Utilidad?: string | number;
+  Fecha?: string | Date;
+  Fecha_Venta?: string | Date;
 };
 
 type CostosFijosRow = {
@@ -77,6 +79,17 @@ const getRows = <T extends Record<string, any>>(data: any): T[] => {
   if (Array.isArray(data)) return data as T[];
   return [];
 };
+
+const parseDate = (value: unknown): Date | null => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
+
+const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 // ========================
 // DONUT DE COSTOS
@@ -142,14 +155,14 @@ const doughnutOptions: any = {
 };
 
 // ========================
-// COMPONENTE GAUGE CARD
+// GAUGE CARD
 // ========================
 
 const computeGaugePercent = (kpi: Kpi): number => {
-  // Sencillo: si es %, usamos el valor. Si no, dejamos un 70% fijo de referencia.
   if (kpi.unit === '%') {
     return Math.max(0, Math.min(100, kpi.value));
   }
+  // para KPIs en plata o “x”, dejamos un 70 % de referencia visual
   return 70;
 };
 
@@ -257,6 +270,66 @@ const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
 };
 
 // ========================
+// UTILIDAD MENSUAL (BAR CHART)
+// ========================
+
+const getMonthlyUtilidadChartData = (ventas: VentaRow[]) => {
+  if (!ventas.length) {
+    return {
+      labels: [],
+      datasets: [
+        {
+          label: 'Utilidad',
+          data: [],
+          backgroundColor: '#00BCD4',
+        },
+      ],
+    };
+  }
+
+  const byMonth: Record<string, number> = {};
+
+  ventas.forEach((venta) => {
+    const fecha =
+      parseDate(venta.Fecha) ||
+      parseDate(venta.Fecha_Venta) ||
+      null;
+
+    if (!fecha) return;
+
+    const year = fecha.getFullYear();
+    const month = fecha.getMonth(); // 0-11
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    if (!byMonth[key]) byMonth[key] = 0;
+    byMonth[key] += toNumber(venta.Utilidad);
+  });
+
+  const keys = Object.keys(byMonth).sort(); // orden cronológico
+  const labels = keys.map((key) => {
+    const [yearStr, monthStr] = key.split('-');
+    const monthIndex = Number(monthStr) - 1;
+    const monthName = MONTHS_SHORT[monthIndex] ?? monthStr;
+    return `${monthName} ${yearStr}`;
+  });
+
+  const data = keys.map((key) => byMonth[key]);
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Utilidad',
+        data,
+        backgroundColor: '#00BCD4',
+        borderRadius: 6,
+        maxBarThickness: 40,
+      },
+    ],
+  };
+};
+
+// ========================
 // COMPONENTE PRINCIPAL
 // ========================
 
@@ -307,6 +380,8 @@ const DashboardHome: React.FC = () => {
     comisionesPlata,
     utilidadTotal,
   );
+
+  const monthlyUtilidadData = getMonthlyUtilidadChartData(ventas);
 
   const kpis: Kpi[] = [
     {
@@ -364,7 +439,8 @@ const DashboardHome: React.FC = () => {
     {
       id: 'roas',
       label: 'ROAS',
-      value: totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0,
+      // ROAS correcto: Ingreso / Costo en Publicidad
+      value: costoPublicidad > 0 ? ingresoTotal / costoPublicidad : 0,
       unit: 'x',
       color: '#00BCD4',
     },
@@ -385,7 +461,7 @@ const DashboardHome: React.FC = () => {
         <>
           <DateRangeBar />
 
-          {/* Barra KPI original (puedes dejarla o quitarla) */}
+          {/* Barra KPI original */}
           <KpiGrid kpis={kpis} />
 
           {/* 1. KPIs estilo “WordOps” con aguja */}
@@ -422,18 +498,8 @@ const DashboardHome: React.FC = () => {
                 Tendencia Mensual de Utilidad
               </div>
               <div style={{ height: 380 }}>
-                {/* Dummy data por ahora */}
                 <Bar
-                  data={{
-                    labels: ['Ene', 'Feb', 'Mar'],
-                    datasets: [
-                      {
-                        label: 'Utilidad',
-                        data: [1, 2, 3],
-                        backgroundColor: '#00BCD4',
-                      },
-                    ],
-                  }}
+                  data={monthlyUtilidadData}
                   options={{ responsive: true, maintainAspectRatio: false }}
                 />
               </div>
@@ -502,8 +568,9 @@ const DashboardHome: React.FC = () => {
               Detalle: Top 10 anuncios por ventas
             </div>
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
-              {/* Cuando tengas datos reales, pásalos aquí */}
-              <TopAdsTable rows={[]} title="" />
+              {/* TODO: cuando tengamos la estructura exacta de la hoja de anuncios,
+                  aquí mapeamos las filas reales */}
+              <TopAdsTable rows={[]} title="Top 10 anuncios por ventas" />
             </div>
           </div>
         </>

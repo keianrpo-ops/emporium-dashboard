@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
-import KpiGrid from '../../components/KpiGrid';
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
 // Corregimos las importaciones de React Chart JS
 import { Doughnut, Bar } from 'react-chartjs-2'; 
-import { kpisMock } from '../../mockData'; 
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+
+
+
+// Línea de registro (después de las importaciones)
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 
 // ======================================================================

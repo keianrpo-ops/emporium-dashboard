@@ -119,6 +119,16 @@ body {
   background: #e5f3fb; /* fondo suave para que las cards destaquen */
 }
 
+.app-shell__sidebar {
+  width: 260px;
+  background: #00bcd4;
+  box-shadow: 4px 0 18px rgba(15, 23, 42, 0.16);
+  position: relative;
+  z-index: 20;
+  padding: 24px 20px; /* ← margen interno para logo y menús */
+}
+
+
 .app-shell {
   display: flex;
   min-height: 100vh;

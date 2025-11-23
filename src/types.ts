@@ -1,13 +1,19 @@
 // src/types.ts
 
 // ========= KPIs DEL DASHBOARD =========
+// src/types.ts
 export interface Kpi {
   id: string;
   label: string;
   value: number;
   currency?: boolean;
   percentage?: boolean;
+
+  // extras opcionales para estilos avanzados
+  color?: string;
+  unit?: string;
 }
+
 
 // ========= TOP 10 ANUNCIOS =========
 export interface TopAdRow {

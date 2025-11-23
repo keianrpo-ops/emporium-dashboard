@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
-import KpiGrid from '../../components/KpiGrid'; 
+ 
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
 // Eliminamos la importación de kpisMock ya que no se usa directamente en el renderizado final

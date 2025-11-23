@@ -5,7 +5,7 @@ import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
-import { Kpi } from '../../types';
+import type { Kpi } from '../../types';
 
 // Charts
 import { Doughnut, Bar } from 'react-chartjs-2';

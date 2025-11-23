@@ -212,11 +212,9 @@ const DashboardHome: React.FC = () => {
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
                 {/* Placeholder para la tabla */}
                 <TopAdsTable rows={[]} title="" /> 
-            </div>
-          </div>
-
+           </div> {/* Cierre del último div de la tarjeta */}
         </>
-      )}
+      )} {/* Cierre de la condición !loading && !error */}
     </Layout>
   );
 };

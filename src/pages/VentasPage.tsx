@@ -4,7 +4,8 @@ import Layout from '../components/Layout';
 import { fetchSheet } from '../services/googleSheetsService';
 import KpiGrid from '../components/KpiGrid';
 import { kpisMock } from '../mockData';
-import VentasChartsGrid, { VentaRow } from '../components/VentasChartsGrid';
+import VentasChartsGrid from '../components/VentasChartsGrid';
+import type { VentaRow } from '../components/VentasChartsGrid';
 
 const toNumber = (value: any): number => {
   if (typeof value === 'number') return value;

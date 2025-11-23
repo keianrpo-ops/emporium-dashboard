@@ -119,6 +119,20 @@ body {
   background: #e5f3fb; /* fondo suave para que las cards destaquen */
 }
 
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f5f9;
+  column-gap: 16px; /* ← separa visualmente sidebar y contenido */
+}
+
+/* Contenido principal más alejado de la barra */
+.app-shell__main {
+  flex: 1;
+  padding: 24px 40px 72px; /* ← aumenta padding left */
+}
+
+
 /* Barra izquierda con sombra marcada a la derecha */
 .app-shell__sidebar {
   width: 260px; /* ajusta según tu sidebar real */

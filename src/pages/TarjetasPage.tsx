@@ -2,15 +2,16 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { fetchSheet } from '../services/googleSheetsService';
 import KpiGrid from '../components/KpiGrid';
+// Eliminamos la importación de kpisMock (ya no se usa)
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
-import { kpisMock } from '../mockData'; // Asegúrate que esta ruta sea correcta
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 // ======================================================================
-// === HELPERS Y TIPOS DE DATOS (RESTAURADOS) ===
+// === HELPERS LOCALES (SOLUCIÓN A TS2304) ===
 // ======================================================================
+
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -32,7 +33,7 @@ const getRows = <T extends Record<string, any>>(data: any): T[] => {
 };
 
 // Tipos de datos para las hojas de Tarjetas
-type TarjetaRow = { [key: string]: any; Limite?: string | number; Saldo_Actual?: string | number; };
+type TarjetaRow = { [key: string]: any; Limite?: string | number; Saldo_Actual?: string | number; Cupo_Disponible?: string | number; };
 type MovimientoRow = { [key: string]: any; Monto?: string | number; Categoria?: string; };
 
 // Lógica de datos para la gráfica de Dona (Uso del cupo)
@@ -81,6 +82,8 @@ const getBarData = (movimientos: MovimientoRow[]) => {
   };
 };
 
+const doughnutOptions: any = { /* ... */ }; // Placeholder para opciones de gráfica
+
 // ======================================================================
 // === COMPONENTE PRINCIPAL ===
 // ======================================================================
@@ -88,8 +91,8 @@ const getBarData = (movimientos: MovimientoRow[]) => {
 const TarjetasPage: React.FC = () => {
   const [tarjetas, setTarjetas] = useState<TarjetaRow[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoRow[]>([]);
-  const [loading, setLoading] = useState(true); // Usado en JSX
-  const [error, setError] = useState<string | null>(null); // Usado en JSX
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -110,17 +113,17 @@ const TarjetasPage: React.FC = () => {
     load();
   }, []);
 
-  // === CÁLCULOS DE KPI Y GRÁFICAS ===
+  // === CÁLCULOS DE KPI Y GRÁFICAS (USADOS EN JSX) ===
   const totalLimite = sumByKey(tarjetas, 'Limite');
   const totalSaldo = sumByKey(tarjetas, 'Saldo_Actual');
   const totalCupoDisponible = totalLimite - totalSaldo;
   const totalGastosMes = sumByKey(movimientos, 'Monto');
-  const porcentajeUtilizado = totalLimite > 0 ? (totalSaldo / totalLimite) * 100 : 0; // USADO en el JSX
+  const porcentajeUtilizado = totalLimite > 0 ? (totalSaldo / totalLimite) * 100 : 0;
   
   const doughnutData = useMemo(() => getDoughnutData(tarjetas), [tarjetas]);
   const barData = useMemo(() => getBarData(movimientos), [movimientos]);
 
-  // === KPIs (Corregido el tipo TS2322) ===
+  // === KPIs (Corregido el tipo) ===
   const cardKpis = [
     { label: 'Límite de crédito total', value: totalLimite, currency: true, id: 'limite-total' },
     { label: 'Saldo total utilizado', value: totalSaldo, currency: true, id: 'saldo-utilizado' },
@@ -138,7 +141,7 @@ const TarjetasPage: React.FC = () => {
 
       {/* Grid de KPIs */}
       {!loading && <KpiGrid kpis={cardKpis} />} 
-
+      
       {/* 2. Gráficas de Uso de Cupo y Gastos por Categoría */}
       {!loading && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24, marginTop: 24 }}>
@@ -162,7 +165,7 @@ const TarjetasPage: React.FC = () => {
             <div className="card-title">Distribución de Gastos por Categoría</div>
             <div style={{ width: '100%', height: 'calc(100% - 30px)' }}>
               {movimientos.length > 0 ? (
-                  <Bar data={barData} options={{ maintainAspectRatio: false }} />
+                <Bar data={barData} options={{ maintainAspectRatio: false }} />
               ) : (<p>No hay datos de movimientos para graficar.</p>)}
             </div>
           </div>

@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "git add . && git commit -m \"Deploy automático\" && git push origin main"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

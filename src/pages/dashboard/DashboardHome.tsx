@@ -168,43 +168,102 @@ const doughnutOptions: any = {
 };
 
 // ========================
-// GAUGE CARD
+// HELPERS PARA EL GAUGE SVG
+// ========================
+
+const polarToCartesian = (
+  cx: number,
+  cy: number,
+  r: number,
+  angleDeg: number,
+) => {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad),
+  };
+};
+
+const describeArc = (
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number,
+) => {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+};
+
+// ========================
+// GAUGE CARD (ESTILO WORDOPS)
 // ========================
 
 const computeGaugePercent = (kpi: Kpi): number => {
-  // Solo usamos la aguja si es porcentaje
   if (kpi.unit === '%') {
     return Math.max(0, Math.min(100, kpi.value));
   }
+  // si no es %, dejamos 70% por defecto visual
   return 70;
 };
 
 const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
   const percent = computeGaugePercent(kpi);
-  const needleAngle = (percent / 100) * 120 - 60; // de -60° a +60°
+
+  // Configuración del gauge
+  const width = 200;
+  const height = 120;
+  const cx = width / 2;
+  const cy = height; // centro en la parte baja del SVG
+  const radius = 80;
+
+  // Arco de fondo (media luna completa 180° -> 0°)
+  const backgroundPath = describeArc(cx, cy, radius, 180, 0);
+
+  // Arco de valor (desde 180° hasta el ángulo correspondiente al porcentaje)
+  const valueAngle = 180 - (percent / 100) * 180; // 180° (0%) a 0° (100%)
+  const foregroundPath = describeArc(cx, cy, radius, 180, valueAngle);
+
+  // Aguja
+  const needleLength = radius - 8;
+  const needleAngle = valueAngle;
+  const needleRad = ((needleAngle - 90) * Math.PI) / 180;
+  const needleX = cx + needleLength * Math.cos(needleRad);
+  const needleY = cy + needleLength * Math.sin(needleRad);
+
+  const mainColor = kpi.color || '#0ea5e9';
 
   return (
     <div
       className="card card-gauge"
       style={{
         textAlign: 'center',
-        padding: '20px 10px',
-        height: 140,
+        padding: '16px 12px',
+        height: 190,
         background: '#ffffff',
         borderRadius: 10,
         boxShadow: '0 8px 20px rgba(15,23,42,0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
       }}
     >
-      <p className="kpi-label" style={{ fontSize: 12, margin: 0 }}>
+      <p
+        className="kpi-label"
+        style={{ fontSize: 12, margin: 0, color: '#64748B' }}
+      >
         {kpi.label}
       </p>
+
       <h2
         className="kpi-value"
         style={{
-          fontSize: 24,
+          fontSize: 20,
           fontWeight: 700,
-          color: kpi.color || '#0f172a',
-          margin: '8px 0',
+          color: mainColor,
+          margin: '4px 0 0 0',
         }}
       >
         {kpi.currency
@@ -213,70 +272,72 @@ const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
         {kpi.unit ?? ''}
       </h2>
 
-      {/* Gauge simple con aguja */}
+      {/* Gauge grande tipo WordOps */}
       <div
         style={{
-          position: 'relative',
-          height: 60,
-          borderRadius: 999,
-          marginTop: 6,
-          background:
-            'linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 50%, #e2e8f0 100%)',
+          marginTop: 8,
+          flexGrow: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {/* barra de progreso */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 10,
-            right: 10,
-            bottom: 18,
-            height: 8,
-            borderRadius: 999,
-            background: '#e2e8f0',
-            overflow: 'hidden',
-          }}
+        <svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
         >
-          <div
-            style={{
-              width: `${percent}%`,
-              height: '100%',
-              borderRadius: 999,
-              background: kpi.color || '#0ea5e9',
-              transition: 'width 0.4s ease',
-            }}
+          {/* arco de fondo */}
+          <path
+            d={backgroundPath}
+            stroke="#E2E8F0"
+            strokeWidth={12}
+            fill="none"
           />
-        </div>
 
-        {/* aguja */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 10,
-            width: 2,
-            height: 24,
-            background: kpi.color || '#0ea5e9',
-            transformOrigin: 'bottom center',
-            transform: `translateX(-50%) rotate(${needleAngle}deg)`,
-            transition: 'transform 0.4s ease',
-          }}
-        />
+          {/* arco de valor */}
+          <path
+            d={foregroundPath}
+            stroke={mainColor}
+            strokeWidth={12}
+            strokeLinecap="round"
+            fill="none"
+          />
 
-        {/* pivote */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 8,
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: '#ffffff',
-            border: `2px solid ${kpi.color || '#0ea5e9'}`,
-            transform: 'translateX(-50%)',
-          }}
-        />
+          {/* aguja */}
+          <line
+            x1={cx}
+            y1={cy}
+            x2={needleX}
+            y2={needleY}
+            stroke={mainColor}
+            strokeWidth={3}
+          />
+
+          {/* pivote */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={5}
+            fill="#ffffff"
+            stroke={mainColor}
+            strokeWidth={2}
+          />
+
+          {/* valor porcentual grande en el centro del gauge */}
+          {kpi.unit === '%' && (
+            <text
+              x={cx}
+              y={cy - 25}
+              textAnchor="middle"
+              fontSize="18"
+              fontWeight="700"
+              fill={mainColor}
+            >
+              {percent.toFixed(0)}%
+            </text>
+          )}
+        </svg>
       </div>
     </div>
   );
@@ -400,7 +461,7 @@ const DashboardHome: React.FC = () => {
     ventas.length > 0 ? ingresoTotal / ventas.length : 0;
 
   // ========================
-  // BLOQUE 1: KPIs PRINCIPALES (dinero)
+  // KPIs PRINCIPALES
   // ========================
   const mainKpis: Kpi[] = [
     {
@@ -448,7 +509,7 @@ const DashboardHome: React.FC = () => {
   ];
 
   // ========================
-  // BLOQUE 2: KPIs DE AGUJA (porcentajes, SIN duplicar los de arriba)
+  // KPIs DE AGUJA (PORCENTAJES)
   // ========================
   const gaugeKpis: Kpi[] = [
     {
@@ -482,7 +543,7 @@ const DashboardHome: React.FC = () => {
   ];
 
   // ========================
-  // BLOQUE 3: INDICADORES LATERALES
+  // INDICADORES LATERALES
   // ========================
   const rightSideKpis: Kpi[] = [
     {
@@ -516,10 +577,10 @@ const DashboardHome: React.FC = () => {
         <>
           <DateRangeBar />
 
-          {/* 1. KPIs principales (tarjetas normales) */}
+          {/* KPIs principales */}
           <KpiGrid kpis={mainKpis} />
 
-          {/* 2. KPIs tipo “status” con aguja, SIN duplicar los anteriores */}
+          {/* KPIs tipo WordOps con agujas grandes */}
           <div
             className="status-kpis-grid"
             style={{
@@ -535,7 +596,7 @@ const DashboardHome: React.FC = () => {
             ))}
           </div>
 
-          {/* 3. Gráfico grande + Dona + indicadores laterales */}
+          {/* Gráfico grande + Dona + indicadores laterales */}
           <div
             className="main-metrics-section"
             style={{
@@ -616,7 +677,7 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. Tabla detalle */}
+          {/* Tabla detalle */}
           <div
             className="card detail-table-section"
             style={{ padding: 16, marginTop: 24, background: '#ffffff' }}

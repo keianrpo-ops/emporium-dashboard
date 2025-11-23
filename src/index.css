@@ -108,15 +108,18 @@ body {
 }
 
 
+/* Hover moderno */
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.15); 
-  color: white;
+  background: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  transform: translateX(4px); /* se desliza un poco hacia la derecha */
 }
+
+/* Opción activa */
 .sidebar-item--active {
-  background: #FFFFFF; 
-  color: var(--text-primary); 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-weight: 500;
+  background: #ffffff;
+  color: #00bcd4;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
 }
 
 

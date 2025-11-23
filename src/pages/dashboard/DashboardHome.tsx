@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
-import TopAdsTable from '../../components/TopAdsTable';
+// import TopAdsTable from '../../components/TopAdsTable'; // ❌ Ya no la usamos
 import { fetchSheet } from '../../services/googleSheetsService';
 
 import { Doughnut, Bar } from 'react-chartjs-2';
@@ -34,12 +34,10 @@ type VentaRow = {
   [key: string]: any;
   Valor_Venta?: string | number;
   Costo_Proveedor?: string | number;
-  Costo_Envio?: string | number;
+  Costo_Envío?: string | number;
   Costo_CPA?: string | number;
   Costo_de_Venta?: string | number;
   Utilidad?: string | number;
-  Fecha?: string | Date;
-  Fecha_Venta?: string | Date;
 };
 
 type CostosFijosRow = {
@@ -80,29 +78,23 @@ const getRows = <T extends Record<string, any>>(data: any): T[] => {
   return [];
 };
 
-const parseDate = (value: unknown): Date | null => {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string') {
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  return null;
+const formatCurrency = (value: unknown): string => {
+  const n = toNumber(value);
+  if (!n) return '$ 0';
+  return `$ ${n.toLocaleString('es-CO')}`;
 };
 
-const MONTHS_SHORT = [
-  'Ene',
-  'Feb',
-  'Mar',
-  'Abr',
-  'May',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dic',
-];
+const formatDate = (value: unknown): string => {
+  if (!value) return '';
+  // Asumimos formato YYYY-MM-DD o similar
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('es-CO', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+};
 
 // ========================
 // DONUT DE COSTOS
@@ -168,102 +160,42 @@ const doughnutOptions: any = {
 };
 
 // ========================
-// HELPERS PARA EL GAUGE SVG
-// ========================
-
-const polarToCartesian = (
-  cx: number,
-  cy: number,
-  r: number,
-  angleDeg: number,
-) => {
-  const rad = ((angleDeg - 90) * Math.PI) / 180;
-  return {
-    x: cx + r * Math.cos(rad),
-    y: cy + r * Math.sin(rad),
-  };
-};
-
-const describeArc = (
-  cx: number,
-  cy: number,
-  r: number,
-  startAngle: number,
-  endAngle: number,
-) => {
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end = polarToCartesian(cx, cy, r, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
-};
-
-// ========================
-// GAUGE CARD (ESTILO WORDOPS)
+// GAUGE CARD (KPI AGUJA)
 // ========================
 
 const computeGaugePercent = (kpi: Kpi): number => {
   if (kpi.unit === '%') {
     return Math.max(0, Math.min(100, kpi.value));
   }
-  // si no es %, dejamos 70% por defecto visual
   return 70;
 };
 
 const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
   const percent = computeGaugePercent(kpi);
-
-  // Configuración del gauge
-  const width = 200;
-  const height = 120;
-  const cx = width / 2;
-  const cy = height; // centro en la parte baja del SVG
-  const radius = 80;
-
-  // Arco de fondo (media luna completa 180° -> 0°)
-  const backgroundPath = describeArc(cx, cy, radius, 180, 0);
-
-  // Arco de valor (desde 180° hasta el ángulo correspondiente al porcentaje)
-  const valueAngle = 180 - (percent / 100) * 180; // 180° (0%) a 0° (100%)
-  const foregroundPath = describeArc(cx, cy, radius, 180, valueAngle);
-
-  // Aguja
-  const needleLength = radius - 8;
-  const needleAngle = valueAngle;
-  const needleRad = ((needleAngle - 90) * Math.PI) / 180;
-  const needleX = cx + needleLength * Math.cos(needleRad);
-  const needleY = cy + needleLength * Math.sin(needleRad);
-
-  const mainColor = kpi.color || '#0ea5e9';
+  const needleAngle = (percent / 100) * 120 - 60;
 
   return (
     <div
       className="card card-gauge"
       style={{
         textAlign: 'center',
-        padding: '16px 12px',
-        height: 190,
+        padding: '20px 10px',
+        height: 140,
         background: '#ffffff',
         borderRadius: 10,
         boxShadow: '0 8px 20px rgba(15,23,42,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
       }}
     >
-      <p
-        className="kpi-label"
-        style={{ fontSize: 12, margin: 0, color: '#64748B' }}
-      >
+      <p className="kpi-label" style={{ fontSize: 12, margin: 0 }}>
         {kpi.label}
       </p>
-
       <h2
         className="kpi-value"
         style={{
-          fontSize: 20,
+          fontSize: 24,
           fontWeight: 700,
-          color: mainColor,
-          margin: '4px 0 0 0',
+          color: kpi.color || '#0f172a',
+          margin: '8px 0',
         }}
       >
         {kpi.currency
@@ -272,135 +204,189 @@ const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
         {kpi.unit ?? ''}
       </h2>
 
-      {/* Gauge grande tipo WordOps */}
       <div
         style={{
-          marginTop: 8,
-          flexGrow: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'relative',
+          height: 60,
+          borderRadius: 999,
+          marginTop: 6,
+          background:
+            'linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 50%, #e2e8f0 100%)',
         }}
       >
-        <svg
-          width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
+        <div
+          style={{
+            position: 'absolute',
+            left: 10,
+            right: 10,
+            bottom: 18,
+            height: 8,
+            borderRadius: 999,
+            background: '#e2e8f0',
+            overflow: 'hidden',
+          }}
         >
-          {/* arco de fondo */}
-          <path
-            d={backgroundPath}
-            stroke="#E2E8F0"
-            strokeWidth={12}
-            fill="none"
+          <div
+            style={{
+              width: `${percent}%`,
+              height: '100%',
+              borderRadius: 999,
+              background: kpi.color || '#0ea5e9',
+              transition: 'width 0.4s ease',
+            }}
           />
+        </div>
 
-          {/* arco de valor */}
-          <path
-            d={foregroundPath}
-            stroke={mainColor}
-            strokeWidth={12}
-            strokeLinecap="round"
-            fill="none"
-          />
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 10,
+            width: 2,
+            height: 24,
+            background: kpi.color || '#0ea5e9',
+            transformOrigin: 'bottom center',
+            transform: `translateX(-50%) rotate(${needleAngle}deg)`,
+            transition: 'transform 0.4s ease',
+          }}
+        />
 
-          {/* aguja */}
-          <line
-            x1={cx}
-            y1={cy}
-            x2={needleX}
-            y2={needleY}
-            stroke={mainColor}
-            strokeWidth={3}
-          />
-
-          {/* pivote */}
-          <circle
-            cx={cx}
-            cy={cy}
-            r={5}
-            fill="#ffffff"
-            stroke={mainColor}
-            strokeWidth={2}
-          />
-
-          {/* valor porcentual grande en el centro del gauge */}
-          {kpi.unit === '%' && (
-            <text
-              x={cx}
-              y={cy - 25}
-              textAnchor="middle"
-              fontSize="18"
-              fontWeight="700"
-              fill={mainColor}
-            >
-              {percent.toFixed(0)}%
-            </text>
-          )}
-        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 8,
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: `2px solid ${kpi.color || '#0ea5e9'}`,
+            transform: 'translateX(-50%)',
+          }}
+        />
       </div>
     </div>
   );
 };
 
 // ========================
-// UTILIDAD MENSUAL (BAR CHART)
+// TABLA EJECUTIVA DE VENTAS
 // ========================
 
-const getMonthlyUtilidadChartData = (ventas: VentaRow[]) => {
-  if (!ventas.length) {
-    return {
-      labels: [],
-      datasets: [
-        {
-          label: 'Utilidad',
-          data: [],
-          backgroundColor: '#00BCD4',
-        },
-      ],
-    };
+interface SalesTableProps {
+  rows: VentaRow[];
+}
+
+const SalesTable: React.FC<SalesTableProps> = ({ rows }) => {
+  if (!rows.length) {
+    return (
+      <p style={{ fontSize: 13, color: '#64748B', marginTop: 8 }}>
+        Aún no hay ventas para mostrar en la tabla ejecutiva.
+      </p>
+    );
   }
 
-  const byMonth: Record<string, number> = {};
+  return (
+    <div style={{ overflowX: 'auto', marginTop: 10 }}>
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: 12,
+          minWidth: 960,
+        }}
+      >
+        <thead>
+          <tr
+            style={{
+              background: '#f8fafc',
+              borderBottom: '1px solid #e2e8f0',
+            }}
+          >
+            <th style={thStyle}>Fecha</th>
+            <th style={thStyle}>ID Venta</th>
+            <th style={thStyle}>Pedido</th>
+            <th style={thStyle}>Producto</th>
+            <th style={thStyle}>Cant.</th>
+            <th style={thStyle}>Cliente</th>
+            <th style={thStyle}>Ciudad</th>
+            <th style={thStyle}>Dirección</th>
+            <th style={thStyle}>Teléfono</th>
+            <th style={thStyle}>Transportadora</th>
+            <th style={thStyle}>Estado logístico</th>
+            <th style={thStyle}>Valor venta</th>
+            <th style={thStyle}>Utilidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, idx) => {
+            const fecha = row['Fecha'];
+            const idVenta = row['ID_Venta'];
+            const idPedido = row['ID_Pedido_Shopify'];
+            const producto = row['Producto'];
+            const cantidad = row['Cantidad'];
+            const cliente = row['Nombre_Cliente'];
+            const ciudad = row['Ciudad'];
+            const direccion1 = row['Dirección_1'] ?? row['Direccion_1'];
+            const direccion2 = row['Dirección_2_Barrio'] ?? row['Direccion_2_Barrio'];
+            const telefono = row['Teléfono'] ?? row['Telefono'];
+            const transportadora = row['Transportadora_Dropi'];
+            const estadoLog = row['EstadoLogistico_Dropi'];
+            const valorVenta = row['Valor_Venta'];
+            const utilidad = row['Utilidad'];
 
-  ventas.forEach((venta) => {
-    const fecha =
-      parseDate(venta.Fecha) ||
-      parseDate(venta.Fecha_Venta) ||
-      null;
+            const direccion = [direccion1, direccion2].filter(Boolean).join(' - ');
 
-    if (!fecha) return;
+            return (
+              <tr
+                key={`${idVenta ?? idPedido ?? idx}`}
+                style={{
+                  borderBottom: '1px solid #e2e8f0',
+                  background: idx % 2 === 0 ? '#ffffff' : '#f9fafb',
+                }}
+              >
+                <td style={tdStyle}>{formatDate(fecha)}</td>
+                <td style={tdStyle}>{String(idVenta ?? '')}</td>
+                <td style={tdStyle}>{String(idPedido ?? '')}</td>
+                <td style={tdStyle}>{String(producto ?? '')}</td>
+                <td style={{ ...tdStyle, textAlign: 'center' }}>
+                  {cantidad ?? ''}
+                </td>
+                <td style={tdStyle}>{String(cliente ?? '')}</td>
+                <td style={tdStyle}>{String(ciudad ?? '')}</td>
+                <td style={tdStyle}>{direccion}</td>
+                <td style={tdStyle}>{String(telefono ?? '')}</td>
+                <td style={tdStyle}>{String(transportadora ?? '')}</td>
+                <td style={tdStyle}>{String(estadoLog ?? '')}</td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>
+                  {formatCurrency(valorVenta)}
+                </td>
+                <td style={{ ...tdStyle, textAlign: 'right' }}>
+                  {formatCurrency(utilidad)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
-    const year = fecha.getFullYear();
-    const month = fecha.getMonth(); // 0-11
-    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+const thStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  textAlign: 'left',
+  fontWeight: 600,
+  color: '#0f172a',
+  fontSize: 11,
+  whiteSpace: 'nowrap',
+};
 
-    if (!byMonth[key]) byMonth[key] = 0;
-    byMonth[key] += toNumber(venta.Utilidad);
-  });
-
-  const keys = Object.keys(byMonth).sort(); // orden cronológico
-  const labels = keys.map((key) => {
-    const [yearStr, monthStr] = key.split('-');
-    const monthIndex = Number(monthStr) - 1;
-    const monthName = MONTHS_SHORT[monthIndex] ?? monthStr;
-    return `${monthName} ${yearStr}`;
-  });
-
-  const data = keys.map((key) => byMonth[key]);
-
-  return {
-    labels,
-    datasets: [
-      {
-        label: 'Utilidad',
-        data,
-        backgroundColor: '#00BCD4',
-        borderRadius: 6,
-        maxBarThickness: 40,
-      },
-    ],
-  };
+const tdStyle: React.CSSProperties = {
+  padding: '6px 10px',
+  color: '#0f172a',
+  fontSize: 11,
+  verticalAlign: 'top',
 };
 
 // ========================
@@ -437,7 +423,7 @@ const DashboardHome: React.FC = () => {
   // Cálculos principales
   const ingresoTotal = sumByKey<VentaRow>(ventas, 'Valor_Venta');
   const costoProveedor = sumByKey<VentaRow>(ventas, 'Costo_Proveedor');
-  const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envio');
+  const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envío');
   const costoPublicidad = sumByKey<VentaRow>(ventas, 'Costo_CPA');
   const comisionesPlata = sumByKey<VentaRow>(ventas, 'Costo_de_Venta');
   const utilidadTotal = sumByKey<VentaRow>(ventas, 'Utilidad');
@@ -455,15 +441,7 @@ const DashboardHome: React.FC = () => {
     utilidadTotal,
   );
 
-  const monthlyUtilidadData = getMonthlyUtilidadChartData(ventas);
-
-  const ticketPromedio =
-    ventas.length > 0 ? ingresoTotal / ventas.length : 0;
-
-  // ========================
-  // KPIs PRINCIPALES
-  // ========================
-  const mainKpis: Kpi[] = [
+  const kpis: Kpi[] = [
     {
       id: 'ingreso-total',
       label: 'Ingreso total (rango)',
@@ -508,57 +486,20 @@ const DashboardHome: React.FC = () => {
     },
   ];
 
-  // ========================
-  // KPIs DE AGUJA (PORCENTAJES)
-  // ========================
-  const gaugeKpis: Kpi[] = [
+  const rightSideKpis: Kpi[] = [
     {
-      id: 'margen-bruto',
-      label: 'Margen bruto sobre ingresos',
+      id: 'margen',
+      label: 'Margen Bruto (%)',
       value: ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0,
       unit: '%',
       color: '#22C55E',
     },
     {
-      id: 'margen-neto',
-      label: 'Margen neto sobre ingresos',
-      value: ingresoTotal > 0 ? (utilidadNeta / ingresoTotal) * 100 : 0,
-      unit: '%',
-      color: '#0EA5E9',
-    },
-    {
-      id: 'peso-costos-fijos',
-      label: 'Costos fijos / utilidad bruta',
-      value: utilidadTotal > 0 ? (totalCostosFijos / utilidadTotal) * 100 : 0,
-      unit: '%',
-      color: '#F97316',
-    },
-    {
-      id: 'comisiones-share',
-      label: 'Comisiones / ingresos',
-      value: ingresoTotal > 0 ? (comisionesPlata / ingresoTotal) * 100 : 0,
-      unit: '%',
-      color: '#A855F7',
-    },
-  ];
-
-  // ========================
-  // INDICADORES LATERALES
-  // ========================
-  const rightSideKpis: Kpi[] = [
-    {
       id: 'roas',
       label: 'ROAS',
-      value: costoPublicidad > 0 ? ingresoTotal / costoPublicidad : 0,
+      value: totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0,
       unit: 'x',
       color: '#00BCD4',
-    },
-    {
-      id: 'ticket-promedio',
-      label: 'Ticket promedio',
-      value: ticketPromedio,
-      currency: true,
-      color: '#22C55E',
     },
     {
       id: 'conv',
@@ -567,6 +508,15 @@ const DashboardHome: React.FC = () => {
       color: '#F97316',
     },
   ];
+
+  // Ordenar ventas por fecha y tomar las últimas 50
+  const ventasOrdenadas = [...ventas].sort((a, b) => {
+    const da = new Date(String(a['Fecha'] ?? a['fecha'] ?? '')).getTime() || 0;
+    const db = new Date(String(b['Fecha'] ?? b['fecha'] ?? '')).getTime() || 0;
+    return db - da;
+  });
+
+  const ventasTabla = ventasOrdenadas.slice(0, 50);
 
   return (
     <Layout>
@@ -577,10 +527,10 @@ const DashboardHome: React.FC = () => {
         <>
           <DateRangeBar />
 
-          {/* KPIs principales */}
-          <KpiGrid kpis={mainKpis} />
+          {/* Barra KPI principal */}
+          <KpiGrid kpis={kpis} />
 
-          {/* KPIs tipo WordOps con agujas grandes */}
+          {/* Gauges estilo WordOps */}
           <div
             className="status-kpis-grid"
             style={{
@@ -591,12 +541,12 @@ const DashboardHome: React.FC = () => {
               marginTop: 24,
             }}
           >
-            {gaugeKpis.map((kpi) => (
+            {kpis.slice(0, 4).map((kpi) => (
               <GaugeCard key={kpi.id} kpi={kpi} />
             ))}
           </div>
 
-          {/* Gráfico grande + Dona + indicadores laterales */}
+          {/* Gráfico grande + Dona + indicadores */}
           <div
             className="main-metrics-section"
             style={{
@@ -614,8 +564,18 @@ const DashboardHome: React.FC = () => {
                 Tendencia Mensual de Utilidad
               </div>
               <div style={{ height: 380 }}>
+                {/* Dummy data temporal */}
                 <Bar
-                  data={monthlyUtilidadData}
+                  data={{
+                    labels: ['Ene', 'Feb', 'Mar'],
+                    datasets: [
+                      {
+                        label: 'Utilidad',
+                        data: [1, 2, 3],
+                        backgroundColor: '#00BCD4',
+                      },
+                    ],
+                  }}
                   options={{ responsive: true, maintainAspectRatio: false }}
                 />
               </div>
@@ -630,9 +590,7 @@ const DashboardHome: React.FC = () => {
                 className="card"
                 style={{ padding: 20, flexGrow: 1, background: '#ffffff' }}
               >
-                <div className="card-title">
-                  Estructura de Costos vs Utilidad
-                </div>
+                <div className="card-title">Estructura de Costos vs Utilidad</div>
                 <div style={{ height: 200, margin: '10px 0' }}>
                   <Doughnut
                     data={costosDoughnutData}
@@ -677,17 +635,20 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Tabla detalle */}
+          {/* Tabla ejecutiva de ventas (todo el ancho, con buen margen abajo) */}
           <div
             className="card detail-table-section"
-            style={{ padding: 16, marginTop: 24, background: '#ffffff' }}
+            style={{
+              padding: 16,
+              marginTop: 24,
+              marginBottom: 48, // margen inferior para despegar del footer
+              background: '#ffffff',
+            }}
           >
             <div className="card-title" style={{ fontSize: 16 }}>
-              Detalle: Top 10 anuncios por ventas
+              Ventas recientes (últimas 50)
             </div>
-            <div style={{ overflowX: 'auto', marginTop: 10 }}>
-              <TopAdsTable rows={[]} title="Top 10 anuncios por ventas" />
-            </div>
+            <SalesTable rows={ventasTabla} />
           </div>
         </>
       )}

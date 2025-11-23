@@ -441,6 +441,40 @@ const DashboardHome: React.FC = () => {
     utilidadTotal,
   );
 
+
+  // ==== KPIs HOY ====
+  const isToday = (value: unknown): boolean => {
+    if (!value) return false;
+    const d = new Date(String(value));
+    if (Number.isNaN(d.getTime())) return false;
+    const today = new Date();
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
+
+  const ventasHoy = ventas.filter((v) =>
+    isToday(v['Fecha'] ?? v['fecha'] ?? '')
+  );
+
+  const ingresoHoy = sumByKey<VentaRow>(ventasHoy, 'Valor_Venta');
+  const utilidadHoy = sumByKey<VentaRow>(ventasHoy, 'Utilidad');
+  const costoPublicidadHoy = sumByKey<VentaRow>(ventasHoy, 'Costo_CPA');
+
+  const margenBrutoHoy =
+    ingresoHoy > 0 ? (utilidadHoy / ingresoHoy) * 100 : 0;
+
+  const roasHoy =
+    costoPublicidadHoy > 0 ? ingresoHoy / costoPublicidadHoy : 0;
+
+  const ventasCantidadHoy = ventasHoy.length;
+
+
+
+
+
   const kpis: Kpi[] = [
     {
       id: 'ingreso-total',

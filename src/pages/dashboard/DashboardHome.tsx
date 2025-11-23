@@ -9,15 +9,41 @@ import { Doughnut } from 'react-chartjs-2';
 
 
 // ======================================================================
-// === TIPOS Y HELPERS (Definidos localmente, fuera del componente) ===
+// === TIPOS Y HELPERS (Definidos localmente y USADOS en este scope) ===
 // ======================================================================
 type VentaRow = { [key: string]: any; Valor_Venta?: string | number; Costo_Proveedor?: string | number; Costo_Envio?: string | number; Costo_CPA?: string | number; Costo_de_Venta?: string | number; Utilidad?: string | number; };
 type CostosFijosRow = { [key: string]: any; Monto_Mensual?: string | number; };
 
-const toNumber = (value: unknown): number => { /* ... */ return 0; };
-const sumByKey = <T extends Record<string, any>>(rows: T[], key: keyof T): number => { /* ... */ return 0; };
-const getRows = <T extends Record<string, any>>(data: any): T[] => { /* ... */ return []; };
+// Helper para convertir a número (USADO)
+const toNumber = (value: unknown): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+        const normalized = value
+          .replace(/[\s$€]/g, '')
+          .replace(/\./g, '')
+          .replace(',', '.');
+        const n = Number(normalized);
+        return Number.isNaN(n) ? 0 : n;
+    }
+    return 0;
+};
 
+// Helper para sumar por clave (USADO)
+const sumByKey = <T extends Record<string, any>>(
+  rows: T[],
+  key: keyof T
+): number =>
+  rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
+
+// Helper para obtener filas (USADO)
+const getRows = <T extends Record<string, any>>(data: any): T[] => {
+  if (Array.isArray(data?.rows)) return data.rows as T[];
+  if (Array.isArray(data)) return data as T[];
+  return [];
+};
+
+
+// Lógica de Gráfica de Dona (USADO)
 const getCostosDoughnutData = (
   costoProveedor: number, costoEnvio: number, costoPublicidad: number,
   comisionesPlata: number, utilidadBruta: number
@@ -37,6 +63,7 @@ const getCostosDoughnutData = (
     ],
   };
 };
+
 const doughnutOptions: any = { 
     responsive: true,
     maintainAspectRatio: false,
@@ -46,21 +73,15 @@ const doughnutOptions: any = {
     }
 };
 
-// ======================================================================
-// === COMPONENTE PRINCIPAL (USANDO LAS VARIABLES) ===
-// ======================================================================
-
 const DashboardHome: React.FC = () => {
   const [ventas, setVentas] = useState<VentaRow[]>([]);
   const [costosFijos, setCostosFijos] = useState<CostosFijosRow[]>([]);
-  const [loading, setLoading] = useState(true); // USADO
-  const [error, setError] = useState<string | null>(null); // USADO
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        // [TS6133 en fetchSheet y variables de estado]
-        // Las funciones y variables de estado se usan aquí.
         const [ventasData, costosFijosData] = await Promise.all([
           fetchSheet('Ventas'),
           fetchSheet('Costos_Fijos'),
@@ -71,7 +92,6 @@ const DashboardHome: React.FC = () => {
 
         setVentas(ventasRows);
         setCostosFijos(costosFijosRows);
-        
       } catch (e) {
         console.error(e);
         setError('No pudimos leer los datos de Google Sheets.');
@@ -82,8 +102,7 @@ const DashboardHome: React.FC = () => {
     load();
   }, []);
 
-  // [TS6133 en variables de cálculo: costoEnvio, utilidadTotal, etc.]
-  // Usamos las variables inmediatamente en la definición del resultado (costosDoughnutData y kpis).
+  // === CÁLCULOS PRINCIPALES (USADOS INMEDIATAMENTE) ===
   const ingresoTotal = sumByKey<VentaRow>(ventas, 'Valor_Venta');
   const costoProveedor = sumByKey<VentaRow>(ventas, 'Costo_Proveedor');
   const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envio');
@@ -95,9 +114,9 @@ const DashboardHome: React.FC = () => {
   
   const costosDoughnutData = getCostosDoughnutData(costoProveedor, costoEnvio, costoPublicidad, comisionesPlata, utilidadTotal);
 
+  // === KPIs DEL DASHBOARD (Usando las variables y kpisMock) ===
   const kpis = [
     { ...kpisMock[0], label: 'Ingreso total (rango)', value: ingresoTotal, currency: true, id: 'ingreso-total' },
-    // [TS6133 en kpisMock] - Resuelto porque kpisMock es usado en el spread.
     { ...kpisMock[1], label: 'Costo producto (proveedor)', value: costoProveedor, currency: true, id: 'costo-prov' },
     { ...kpisMock[2], label: 'Costo envío', value: costoEnvio, currency: true, id: 'costo-envio' },
     { ...kpisMock[3], label: 'Comisiones plataforma', value: comisionesPlata, currency: true, id: 'comisiones' },

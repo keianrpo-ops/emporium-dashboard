@@ -11,3 +11,10 @@
    width: 100%;
    ...
 } */
+
+.app-root {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-body); 
+  padding: 20px;
+}

@@ -5,7 +5,6 @@ import KpiGrid from '../components/KpiGrid';
 import { Doughnut, Bar } from 'react-chartjs-2';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 // ======================================================================
 // === HELPERS LOCALES (Solución a errores TS6133/TS2304) ===

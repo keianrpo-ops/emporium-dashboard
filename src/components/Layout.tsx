@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-// src/components/Layout.tsx (ejemplo)
-import React, { PropsWithChildren } from 'react';
+
 import Sidebar from './Sidebar';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,6 +17,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { label: 'Configuración', path: '/configuracion' },
     { label: 'Test Sheets', path: '/test-sheets' },
   ];
+
+
+const Layout: React.FC<PropsWithChildren> = ({ children }) => {
+  return (
+    <div className="app-shell">
+      <aside className="app-shell__sidebar">
+        <Sidebar />
+      </aside>
+
+      <main className="app-shell__main">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+
 
   return (
     <div className="app-root">

@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { fetchSheet } from '../services/googleSheetsService';
 import KpiGrid from '../components/KpiGrid';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 

@@ -158,24 +158,21 @@ const DashboardHome: React.FC = () => {
       {!loading && !error && (
         <>
           <DateRangeBar /> 
-          <KpiGrid kpis={kpis} /> 
 
-          {/* 1. KPIs de Estado (Fila Superior) */}
-          <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: '24px' }}>
-              {kpis.slice(0, 4).map(kpi => (
-                  <div key={kpi.id} className="card card-gauge" style={{ textAlign: 'center', padding: '20px 10px', height: '140px' }}>
-                    <p className="kpi-label">{kpi.label}</p>
-                    <h2 className="kpi-value" style={{ fontSize: 24, fontWeight: 700, color: kpi.color }}>
-                        {kpi.currency ? `$${kpi.value.toLocaleString('es-CO')}` : kpi.value}
-                    </h2>
-                    <div style={{ height: 60, background: '#F0F4F8', borderRadius: '4px', marginTop: '10px' }}>
-                        <p style={{ fontSize: 11, color: '#64748B' }}>[Medidor visual aquí]</p>
-                    </div>
-                  </div>
+          {/* 1. KPIs DE COLOR SOLIDO (Estilo Imagen Colorida) */}
+          <div className="kpi-color-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: '30px' }}>
+              {kpisSolidos.map((kpi, index) => (
+                  <SolidColorKpiCard 
+                      key={kpi.id}
+                      kpi={kpi} 
+                      // Mapeo simple de colores para el diseño
+                      backgroundColor={['#00BCD4', '#22C55E', '#F97316', '#EF4444'][index]} 
+                      icon={['🛒', '💵', '📦', '📣'][index]}
+                  />
               ))}
           </div>
 
-          {/* 2. GRÁFICOS PRINCIPALES Y STATUS DE RENDIMIENTO (2 columnas) */}
+          {/* 2. GRÁFICOS PRINCIPALES Y STATUS DE RENDIMIENTO */}
           <div className="main-metrics-section" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
             
             {/* Columna Izquierda: Gráfico de Tendencia (Main Metrics) */}
@@ -197,15 +194,10 @@ const DashboardHome: React.FC = () => {
                 </div>
               </div>
 
-              {/* Badges de Estado (como en WordOps) */}
+              {/* Badges de Estado */}
               <div className="card status-badges" style={{ padding: 15 }}>
-                <div className="card-title">Indicadores Clave de Rentabilidad</div>
-                {rightSideKpis.map(kpi => (
-                  <div key={kpi.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #E2E8F0' }}>
-                    <span>{kpi.label}</span>
-                    <span style={{ fontWeight: 600, color: kpi.color }}>{kpi.currency ? `$${kpi.value.toLocaleString('es-CO')}` : kpi.value}{kpi.unit}</span>
-                  </div>
-                ))}
+                <div className="card-title">Otros KPIs</div>
+                {/* Aquí irían los demás KPIs si los defines */}
               </div>
             </div>
           </div>
@@ -215,6 +207,7 @@ const DashboardHome: React.FC = () => {
           <div className="card detail-table-section" style={{ padding: 16 }}>
             <div className="card-title" style={{ fontSize: 16 }}>Detalle: Top 10 anuncios por ventas</div>
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                {/* Placeholder para la tabla */}
                 <TopAdsTable rows={[]} title="" /> 
             </div>
           </div>

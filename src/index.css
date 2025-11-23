@@ -2,19 +2,41 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #050816;
   color: #e4edf7;
+
+  /* Paleta base */
+  --bg-body: #050816;
+  --bg-card: rgba(15, 23, 42, 0.92);
+  --bg-card-soft: rgba(15, 23, 42, 0.8);
+  --border-subtle: rgba(15, 23, 42, 0.95);
+  --accent-green: #22c55e;
+  --accent-cyan: #0ea5e9;
+  --accent-gradient: linear-gradient(135deg, #22c55e, #0ea5e9);
+  --text-muted: #9ca3af;
+  --text-soft: #6b7280;
+
+  /* Sombras y bordes para efecto 3D suave */
+  --shadow-soft: 0 16px 40px rgba(15, 23, 42, 0.6);
+  --radius-md: 10px;
+  --radius-lg: 16px;
 }
 
 body {
   margin: 0;
+  background: var(--bg-body);
+  color: #e4edf7;
 }
 
+/* Layout raíz */
 .app-root {
   display: flex;
   min-height: 100vh;
   background: radial-gradient(circle at top, #151c35 0, #050816 45%, #02010a 100%);
 }
 
-/* Sidebar */
+/* ======================
+   SIDEBAR
+   ====================== */
+
 .sidebar {
   width: 240px;
   background: #020617;
@@ -53,23 +75,28 @@ body {
   color: #9ca3af;
 }
 
-
-/* por ejemplo en src/index.css o donde tengas los estilos globales */
+/* Links del sidebar */
 .sidebar-item {
   display: block;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 999px;
   color: #9ca3af;
   text-decoration: none;
   font-size: 14px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  transform: translateX(1px);
 }
 
 .sidebar-item--active {
   background: linear-gradient(90deg, #10b981, #06b6d4);
   color: #ffffff;
+  box-shadow: 0 8px 18px rgba(34, 197, 94, 0.4);
 }
-
-
 
 .sidebar-nav {
   display: flex;
@@ -77,6 +104,7 @@ body {
   gap: 4px;
 }
 
+/* Botones nav antiguos (por si los usas en algún lado) */
 .nav-item {
   border: none;
   background: transparent;
@@ -93,7 +121,10 @@ body {
   color: #e5e7eb;
 }
 
-/* Main */
+/* ======================
+   MAIN + TOPBAR
+   ====================== */
+
 .main {
   flex: 1;
   display: flex;
@@ -142,17 +173,36 @@ body {
   color: #22c55e;
 }
 
-/* Content */
+/* ======================
+   CONTENIDO PRINCIPAL
+   ====================== */
+
 .main-content {
   padding: 0 24px 32px;
 }
 
+/* Título genérico de página */
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.page-subtitle {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-bottom: 12px;
+}
+
+/* Tarjetas base (KPIs, tablas, gráficos) */
 .card {
-  background: rgba(15, 23, 42, 0.9);
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.9);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   padding: 14px 16px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
 }
 
 .card-title {
@@ -165,6 +215,7 @@ body {
   margin-top: 8px;
 }
 
+/* Layout para rangos de fecha */
 .range-row {
   display: flex;
   flex-wrap: wrap;
@@ -194,21 +245,23 @@ body {
   margin-top: 8px;
 }
 
+/* Botones */
 .btn {
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 12px;
   border: none;
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
 .btn-primary {
-  background: #22c55e;
+  background: var(--accent-green);
   color: #020617;
 }
 
 .btn-secondary {
-  background: #0ea5e9;
+  background: var(--accent-cyan);
   color: #020617;
 }
 
@@ -218,7 +271,15 @@ body {
   border: 1px solid #1f2937;
 }
 
-/* KPI grid */
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.8);
+}
+
+/* ======================
+   KPI GRID
+   ====================== */
+
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -230,22 +291,26 @@ body {
   min-height: 76px;
 }
 
-.card-label {
+.card-label,
+.kpi-label {
   font-size: 11px;
   color: #9ca3af;
 }
 
-.card-value {
+.card-value,
+.kpi-value {
   font-size: 18px;
   font-weight: 600;
   margin-top: 6px;
 }
 
+/* Barra inferior de cada KPI (progreso) */
 .kpi-progress {
-  margin-top: 6px;
+  margin-top: 8px;
   height: 4px;
   border-radius: 999px;
   background: #020617;
+  overflow: hidden;
 }
 
 .kpi-progress-bar {
@@ -255,7 +320,10 @@ body {
   background: linear-gradient(90deg, #22c55e, #0ea5e9);
 }
 
-/* Grids */
+/* ======================
+   GRIDS / LAYOUTS
+   ====================== */
+
 .grid-2 {
   display: grid;
   grid-template-columns: 2fr 1.2fr;
@@ -263,34 +331,140 @@ body {
   margin-top: 16px;
 }
 
-/* Tables */
-.card--table {
-  margin-top: 20px;
+/* Layout para páginas tipo "Ventas" con gráficos + tabla */
+.ventas-layout {
+  display: grid;
+  grid-template-columns: 1.7fr 1.1fr;
+  gap: 16px;
+  margin-top: 16px;
 }
 
+.ventas-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ventas-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ======================
+   TABLAS PROFESIONALES
+   ====================== */
+
+/* Para componentes que usan className="data-table" */
+.data-table,
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
+  color: #e5e7eb;
+  margin-top: 8px;
 }
 
+.data-table thead,
 .table thead {
-  background: #020617;
+  background: radial-gradient(circle at top, #111827 0, #020617 70%);
 }
 
+.data-table th,
+.data-table td,
 .table th,
 .table td {
-  padding: 6px 8px;
+  padding: 7px 10px;
   border-bottom: 1px solid #111827;
+  white-space: nowrap;
 }
 
+.data-table th,
 .table th {
   text-align: left;
   color: #9ca3af;
   font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
+
+/* Filas alternas para mayor legibilidad */
+.data-table tbody tr:nth-child(odd),
+.table tbody tr:nth-child(odd) {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.data-table tbody tr:nth-child(even),
+.table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+/* Hover elegante */
+.data-table tbody tr:hover,
+.table tbody tr:hover {
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.3);
+}
+
+/* Texto numérico alineado a la derecha */
+.data-table td.num,
+.table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Contenedor para tablas scrollables (si lo usas) */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
+/* ======================
+   TARJETAS DE GRÁFICOS
+   (donas, barras, etc.)
+   ====================== */
+
+.chart-card {
+  background: var(--bg-card-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 14px 16px 10px;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* Pequeño efecto 3D a donas / gráficos (canvas) */
+.chart-card canvas {
+  filter: drop-shadow(0 10px 25px rgba(15, 23, 42, 0.9));
+  border-radius: 999px;
+}
+
+/* Distribución típica de dos gráficos verticales */
+.charts-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ======================
+   UTILIDADES
+   ====================== */
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12px;
 }

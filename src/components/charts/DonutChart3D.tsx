@@ -136,16 +136,16 @@ const DonutChart3D: React.FC<DonutChart3DProps> = ({
               isAnimationActive
               animationDuration={900}
             >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                  style={{
-                    filter:
-                      'drop-shadow(0 4px 8px rgba(15,23,42,0.9)) drop-shadow(0 -2px 4px rgba(148,163,184,0.25))',
-                  }}
-                />
-              ))}
+       {data.map((_, index) => (
+  <Cell
+    key={`cell-${index}`}
+    fill={COLORS[index % COLORS.length]}
+    style={{
+      filter:
+        'drop-shadow(0 4px 8px rgba(15,23,42,0.9)) drop-shadow(0 -2px 4px rgba(148,163,184,0.25))',
+    }}
+  />
+))}
             </Pie>
 
             <Tooltip

@@ -174,8 +174,7 @@ body {
   width: 150px;        /* ⬅️ AJUSTA EL TAMAÑO DEL LOGO AQUÍ */
   height: auto;
   border-radius: 0;
-  object-fit: contain;
-
+ 
   filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.50));
 }
 

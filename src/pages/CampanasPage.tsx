@@ -1,4 +1,4 @@
-// src/pages/CampanasPage.tsx (VERSIÓN FINAL CON GRÁFICAS Y ESTADÍSTICAS)
+// src/pages/CampanasPage.tsx (VERSIÓN CORREGIDA Y LIMPIA)
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
@@ -14,7 +14,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import ProgressBar from '../components/ProgressBar'; // Asumiendo que tienes un componente ProgressBar simple
 
 type CampañaRow = {
   [key: string]: any;
@@ -89,7 +88,6 @@ const CampanasPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ... (Tu useEffect para cargar datos) ...
   useEffect(() => {
     const load = async () => {
       try {
@@ -119,12 +117,12 @@ const CampanasPage: React.FC = () => {
   const totalImpresiones    = sumByKey(rows, 'Impresiones');
   const totalClics          = sumByKey(rows, 'Clics');
   const totalVentasReg      = sumByKey(rows, 'Ventas_registradas');
-  const totalPresupuesto    = sumByKey(rows, 'Presupuesto_Diario');
+  const totalPresupuesto    = sumByKey(rows, 'Presupuesto_Diario'); // USADO para el porcentaje
 
   const ctrGlobal =
     totalImpresiones > 0 ? (totalClics * 100) / totalImpresiones : 0;
   
-  // Porcentaje de Presupuesto Consumido
+  // Porcentaje de Presupuesto Consumido (USADO)
   const presupuestoConsumidoPct = totalPresupuesto > 0 ? (totalInversion / totalPresupuesto) * 100 : 0;
 
   const avgRoasPlat =
@@ -180,12 +178,12 @@ const CampanasPage: React.FC = () => {
     },
   ];
 
-  // Top 10 campañas por inversión
-  const topCampanias = [...rows]
+  // Top 10 campañas por inversión (USADO)
+  const topCampanias = useMemo(() => ([...rows]
     .sort(
       (a, b) => toNumber(b.Inversion) - toNumber(a.Inversion)
     )
-    .slice(0, 10);
+    .slice(0, 10)), [rows]);
 
   return (
     <Layout>
@@ -195,15 +193,15 @@ const CampanasPage: React.FC = () => {
       </p>
 
       {/* Grid de KPIs */}
-      <KpiGrid kpis={campKpis} /> 
+      <KpiGrid kpis={campKpis} />
 
       {/* Gráfica de Tendencia (Línea) y Barra de Progreso */}
-      <div 
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '3fr 1fr', 
-          gap: 24, 
-          marginTop: 24 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '3fr 1fr',
+          gap: 24,
+          marginTop: 24
         }}
       >
         {/* Gráfica de Tendencia */}
@@ -217,9 +215,9 @@ const CampanasPage: React.FC = () => {
                   <XAxis dataKey="name" stroke="#9ca3af" />
                   <YAxis yAxisId="left" stroke="#0ea5e9" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                   <YAxis yAxisId="right" orientation="right" stroke="#22c55e" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                  
+
                   <Tooltip content={<CustomLineTooltip />} />
-                  
+
                   <Line yAxisId="left" type="monotone" dataKey="Inversion" stroke="#0ea5e9" strokeWidth={2} dot={false} name="Inversión" />
                   <Line yAxisId="right" type="monotone" dataKey="Ventas" stroke="#22c55e" strokeWidth={2} dot={false} name="Ventas" />
                 </LineChart>
@@ -237,16 +235,15 @@ const CampanasPage: React.FC = () => {
           <p style={{ opacity: 0.7, fontSize: 13, marginBottom: 10 }}>
             Inversión total vs Presupuesto Diario proyectado.
           </p>
-          {/* Asumiendo que ProgressBar es un componente que acepta un valor y un máximo */}
-          {/* <ProgressBar value={totalInversion} maxValue={totalPresupuesto} color="#f97316" /> */}
+          {/* Componente de Barra de Progreso (Ahora con estilo inline para evitar la dependencia ProgressBar) */}
           <div style={{ height: 10, background: '#1f2937', borderRadius: 4, overflow: 'hidden' }}>
-            <div 
-              style={{ 
-                width: `${Math.min(100, presupuestoConsumidoPct)}%`, 
-                height: '100%', 
+            <div
+              style={{
+                width: `${Math.min(100, presupuestoConsumidoPct)}%`,
+                height: '100%',
                 background: presupuestoConsumidoPct > 90 ? '#ef4444' : '#f97316',
                 transition: 'width 0.5s'
-              }} 
+              }}
             />
           </div>
           <p style={{ fontSize: 11, opacity: 0.5, marginTop: 10 }}>
@@ -254,15 +251,73 @@ const CampanasPage: React.FC = () => {
           </p>
         </div>
       </div>
-      
+
       {/* Tabla de detalle */}
       <div className="card" style={{ marginTop: 24 }}>
-        <div className="card-title">Top 10 campañas por inversión (Barra de Progreso)</div>
+        <div className="card-title">Top 10 campañas por inversión</div>
 
-        {/* ... (Tu lógica de tabla existente) ... */}
-        {/* Incluir barras de progreso en la tabla de Top Campañas para la Inversión */}
+        {loading && <p>Cargando campañas desde Google Sheets…</p>}
+        {error && (
+          <p style={{ color: '#f87171' }}>
+            {error}
+          </p>
+        )}
+
+        {!loading && !error && topCampanias.length === 0 && (
+          <p>No hay campañas registradas aún.</p>
+        )}
+
+        {/* Tabla de Campañas */}
+        {!loading && !error && topCampanias.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Plataforma</th>
+                  <th>Nombre campaña</th>
+                  <th>Estado</th>
+                  <th>Presupuesto diario</th>
+                  <th>Inversión</th>
+                  <th>Impresiones</th>
+                  <th>Clics</th>
+                  <th>CTR %</th>
+                  <th>Conv.</th>
+                  <th>ROAS plat.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCampanias.map((row, idx) => (
+                  <tr key={idx}>
+                    <td>{row.Plataforma_Ads ?? '-'}</td>
+                    <td>{row.Nombre_Campaña ?? '-'}</td>
+                    <td>{row.Estado_Campaña ?? '-'}</td>
+                    <td>{toNumber(row.Presupuesto_Diario).toLocaleString('es-CO')}</td>
+                    <td>{toNumber(row.Inversion).toLocaleString('es-CO')}</td>
+                    <td>{toNumber(row.Impresiones).toLocaleString('es-CO')}</td>
+                    <td>{toNumber(row.Clics).toLocaleString('es-CO')}</td>
+                    <td>{toNumber(row['CTR_%']).toFixed(2)}</td>
+                    <td>{toNumber(row.Conversiones).toLocaleString('es-CO')}</td>
+                    <td>{toNumber(row.ROAS_Plataforma).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <p
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              opacity: 0.7,
+            }}
+          >
+            Fuente: {rows.length} filas leídas desde la hoja{' '}
+            <b>“Campañas_Ads”</b>.
+          </p>
+        )}
       </div>
-
     </Layout>
   );
 };

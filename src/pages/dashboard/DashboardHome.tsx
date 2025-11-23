@@ -4,21 +4,29 @@ import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
+// Corregimos las importaciones de React Chart JS
+import { Doughnut, Bar } from 'react-chartjs-2'; 
 import { kpisMock } from '../../mockData'; 
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 // ======================================================================
-// === TIPOS Y HELPERS (COMPLETOS Y SIN ERRORES DE SINTAXIS) ===
+// === TIPOS Y HELPERS (COMPLETOS y definidos localmente) ===
 // ======================================================================
-
-type VentaRow = { 
-  [key: string]: any; Valor_Venta?: string | number; Costo_Proveedor?: string | number; Costo_Envio?: string | number; Costo_CPA?: string | number; Costo_de_Venta?: string | number; Utilidad?: string | number; 
-};
+type VentaRow = { [key: string]: any; Valor_Venta?: string | number; Costo_Proveedor?: string | number; Costo_Envio?: string | number; Costo_CPA?: string | number; Costo_de_Venta?: string | number; Utilidad?: string | number; };
 type CostosFijosRow = { [key: string]: any; Monto_Mensual?: string | number; };
 
+// Definición de tipo Kpi para resolver TS2339 (Propiedades color, currency, unit)
+type Kpi = {
+    label: string;
+    value: number;
+    currency?: boolean; 
+    unit?: string;
+    id: string;
+    color?: string; // Necesario para que la propiedad 'color' exista
+};
+
+
+// Helper para convertir a número
 const toNumber = (value: unknown): number => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
@@ -32,12 +40,11 @@ const toNumber = (value: unknown): number => {
     return 0;
 };
 
-const sumByKey = <T extends Record<string, any>>(
-  rows: T[],
-  key: keyof T
-): number =>
+// Helper para sumar por clave
+const sumByKey = <T extends Record<string, any>>(rows: T[], key: keyof T): number =>
   rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
 
+// Helper para obtener filas
 const getRows = <T extends Record<string, any>>(data: any): T[] => {
   if (Array.isArray(data?.rows)) return data.rows as T[];
   if (Array.isArray(data)) return data as T[];
@@ -45,6 +52,7 @@ const getRows = <T extends Record<string, any>>(data: any): T[] => {
 };
 
 
+// Lógica de Gráfica de Dona (Usado)
 const getCostosDoughnutData = (
   costoProveedor: number, costoEnvio: number, costoPublicidad: number,
   comisionesPlata: number, utilidadBruta: number
@@ -59,9 +67,7 @@ const getCostosDoughnutData = (
       {
         data: [utilidadBruta, costoProveedor, costoEnvio, costoPublicidad, comisionesPlata],
         backgroundColor: ['#22c55e', '#f97316', '#0ea5e9', '#eab308', '#a855f7'],
-        borderColor: '#FFFFFF', // Borde blanco para tema claro
-        borderWidth: 2,
-        hoverOffset: 8,
+        borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 4,
       },
     ],
   };
@@ -122,7 +128,7 @@ const DashboardHome: React.FC = () => {
   const costosDoughnutData = getCostosDoughnutData(costoProveedor, costoEnvio, costoPublicidad, comisionesPlata, utilidadTotal);
 
   // === KPIs SUPERIORES (Estilo Medidor) ===
-  const kpis = [
+  const kpis: Kpi[] = [ // Usamos el tipo Kpi[] aquí
       { label: 'Ingreso total (rango)', value: ingresoTotal, currency: true, id: 'ingreso-total', color: '#00BCD4' },
       { label: 'Utilidad neta final', value: utilidadNeta, currency: true, id: 'utilidad-neta', color: '#22C55E' },
       { label: 'Costo producto (proveedor)', value: costoProveedor, currency: true, id: 'costo-prov', color: '#F97316' },
@@ -130,11 +136,12 @@ const DashboardHome: React.FC = () => {
       { label: 'Utilidad bruta total', value: utilidadTotal, currency: true, id: 'utilidad-bruta', color: '#22C55E' },
       { label: 'Comisiones plataforma', value: comisionesPlata, currency: true, id: 'comisiones', color: '#A855F7' },
   ];
-  const rightSideKpis = [
-      { label: 'Margen Bruto (%)', value: (ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0), unit: '%', id: 'margen' },
-      { label: 'ROAS', value: (totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0), unit: 'x', id: 'roas' },
-      { label: 'Conversiones', value: (ventas.length * 1.5), id: 'conv' },
+  const rightSideKpis: Kpi[] = [ // Usamos el tipo Kpi[] aquí
+      { label: 'Margen Bruto (%)', value: (ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0), unit: '%', id: 'margen', color: '#22C55E' },
+      { label: 'ROAS', value: (totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0), unit: 'x', id: 'roas', color: '#00BCD4' },
+      { label: 'Conversiones', value: (ventas.length * 1.5), id: 'conv', color: '#F97316' },
   ];
+
 
   return (
     <Layout>
@@ -146,7 +153,7 @@ const DashboardHome: React.FC = () => {
           <DateRangeBar /> 
 
           {/* 1. KPIs de Estado (Fila Superior) - ESTILO WORDOPS MEDIDOR */}
-          <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24, marginBottom: '24px' }}>
+          <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: '24px' }}>
               {kpis.slice(0, 4).map(kpi => (
                   <div key={kpi.id} className="card card-gauge" style={{ textAlign: 'center', padding: '20px 10px', height: '140px' }}>
                     <p className="kpi-label">{kpi.label}</p>
@@ -185,7 +192,7 @@ const DashboardHome: React.FC = () => {
               </div>
 
               {/* Badges de Estado (como en WordOps) */}
-              <div className="card status-badges" style={{ padding: 15 }}>
+              <div className className="card status-badges" style={{ padding: 15 }}>
                 <div className="card-title">Indicadores Clave de Rentabilidad</div>
                 {rightSideKpis.map(kpi => (
                   <div key={kpi.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #E2E8F0' }}>

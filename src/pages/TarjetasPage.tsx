@@ -2,14 +2,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { fetchSheet } from '../services/googleSheetsService';
 import KpiGrid from '../components/KpiGrid';
-// Eliminamos la importación de kpisMock (ya no se usa)
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 // ======================================================================
-// === HELPERS LOCALES (SOLUCIÓN A TS2304) ===
+// === HELPERS LOCALES (Solución a errores TS6133/TS2304) ===
 // ======================================================================
 
 const toNumber = (value: unknown): number => {
@@ -46,7 +45,8 @@ const getDoughnutData = (tarjetas: TarjetaRow[]) => {
 
   return {
     labels: ['Saldo Utilizado', 'Cupo Disponible'],
-    datasets: [{
+    datasets: [
+      {
         data: [totalSaldo, totalCupoDisponible],
         backgroundColor: ['#ef4444', '#10b981'], 
         hoverBackgroundColor: ['#f87171', '#34d399'],
@@ -64,7 +64,9 @@ const getBarData = (movimientos: MovimientoRow[]) => {
     const monto = toNumber(mov.Monto);
     categoryMap.set(categoria, (categoryMap.get(categoria) || 0) + monto);
   });
+
   const sortedCategories = Array.from(categoryMap.entries()).sort(([, amountA], [, amountB]) => amountB - amountA);
+
   const labels = sortedCategories.map(([category]) => category);
   const data = sortedCategories.map(([, amount]) => amount);
 
@@ -82,7 +84,14 @@ const getBarData = (movimientos: MovimientoRow[]) => {
   };
 };
 
-const doughnutOptions: any = { /* ... */ }; // Placeholder para opciones de gráfica
+const doughnutOptions: any = { 
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%', 
+    plugins: {
+        legend: { position: 'bottom' as const, labels: { color: '#e5e7eb', boxWidth: 14 } },
+    }
+};
 
 // ======================================================================
 // === COMPONENTE PRINCIPAL ===
@@ -123,7 +132,7 @@ const TarjetasPage: React.FC = () => {
   const doughnutData = useMemo(() => getDoughnutData(tarjetas), [tarjetas]);
   const barData = useMemo(() => getBarData(movimientos), [movimientos]);
 
-  // === KPIs (Corregido el tipo) ===
+  // === KPIs (Usados en KpiGrid) ===
   const cardKpis = [
     { label: 'Límite de crédito total', value: totalLimite, currency: true, id: 'limite-total' },
     { label: 'Saldo total utilizado', value: totalSaldo, currency: true, id: 'saldo-utilizado' },
@@ -141,7 +150,7 @@ const TarjetasPage: React.FC = () => {
 
       {/* Grid de KPIs */}
       {!loading && <KpiGrid kpis={cardKpis} />} 
-      
+
       {/* 2. Gráficas de Uso de Cupo y Gastos por Categoría */}
       {!loading && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24, marginTop: 24 }}>

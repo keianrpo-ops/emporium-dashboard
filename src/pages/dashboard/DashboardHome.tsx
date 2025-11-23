@@ -241,85 +241,30 @@ const DashboardHome: React.FC = () => {
 
   // ================== RENDER ==================
   return (
+      return (
     <Layout>
       {loading && <p>Cargando datos del dashboard...</p>}
       {error && <p style={{ color: '#ef4444' }}>{error}</p>}
 
       {!loading && !error && (
         <>
+          {/* Barra de rango de fechas */}
           <DateRangeBar />
 
-          {/* KPIs tipo barra superior (usa tu KpiGrid actual) */}
+          {/* KPIs superiores (tarjetas tipo WordOps, usando tu KpiGrid actualizado) */}
           <KpiGrid kpis={kpis} />
 
-          {/* 1. KPIs estilo “cards WordOps” */}
-          <div
-            className="status-kpis-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 24,
-              marginBottom: 24,
-            }}
-          >
-            {kpis.slice(0, 4).map((kpi) => (
-              <div
-                key={kpi.id}
-                className="card card-gauge"
-                style={{
-                  textAlign: 'center',
-                  padding: '20px 10px',
-                  height: 140,
-                  background: '#ffffff',
-                  borderRadius: 10,
-                  boxShadow: '0 8px 20px rgba(15,23,42,0.1)',
-                }}
-              >
-                <p className="kpi-label" style={{ fontSize: 12, margin: 0 }}>
-                  {kpi.label}
-                </p>
-                <h2
-                  className="kpi-value"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: kpi.color || '#0f172a',
-                    margin: '8px 0',
-                  }}
-                >
-                  {kpi.currency
-                    ? `$ ${kpi.value.toLocaleString('es-CO')}`
-                    : kpi.value.toLocaleString('es-CO')}
-                </h2>
-                <div
-                  style={{
-                    height: 60,
-                    background: '#F0F4F8',
-                    borderRadius: 4,
-                    marginTop: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 11,
-                    color: '#64748B',
-                  }}
-                >
-                  [Medidor visual aquí]
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 2. Gráfico grande + Dona + indicadores */}
+          {/* 2. Gráfico grande + Dona + indicadores (2 columnas) */}
           <div
             className="main-metrics-section"
             style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
               gap: 24,
+              marginTop: 24,
             }}
           >
-            {/* Columna izquierda: Bar */}
+            {/* Columna izquierda: Bar de tendencia mensual */}
             <div className="card chart-large" style={{ height: 450, padding: 20 }}>
               <div className="card-title" style={{ fontSize: 16 }}>
                 Tendencia Mensual de Utilidad
@@ -327,7 +272,7 @@ const DashboardHome: React.FC = () => {
               <div style={{ height: 380 }}>
                 <Bar
                   data={{
-                    labels: ['Ene', 'Feb', 'Mar'],
+                    labels: ['Ene', 'Feb', 'Mar'], // luego conectamos con datos reales
                     datasets: [
                       {
                         data: [1, 2, 3],
@@ -340,11 +285,12 @@ const DashboardHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna derecha: Dona + badges */}
+            {/* Columna derecha: Dona + badges de indicadores */}
             <div
               className="status-and-donut"
               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
             >
+              {/* Gráfico de dona: estructura de costos vs utilidad */}
               <div className="card" style={{ padding: 20, flexGrow: 1 }}>
                 <div className="card-title">Estructura de Costos vs Utilidad</div>
                 <div style={{ height: 200, margin: '10px 0' }}>
@@ -352,6 +298,7 @@ const DashboardHome: React.FC = () => {
                 </div>
               </div>
 
+              {/* Badges de indicadores clave */}
               <div className="card status-badges" style={{ padding: 15 }}>
                 <div className="card-title">Indicadores Clave de Rentabilidad</div>
                 {rightSideKpis.map((kpi) => (
@@ -373,8 +320,8 @@ const DashboardHome: React.FC = () => {
                       }}
                     >
                       {kpi.currency
-                        ? `$ ${kpi.value.toLocaleString('es-CO')}`
-                        : kpi.value.toLocaleString('es-CO')}
+                        ? `$ ${Number(kpi.value || 0).toLocaleString('es-CO')}`
+                        : Number(kpi.value || 0).toLocaleString('es-CO')}
                       {kpi.unit ?? ''}
                     </span>
                   </div>
@@ -383,8 +330,8 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Tabla detalle */}
-          <div className="card detail-table-section" style={{ padding: 16 }}>
+          {/* 3. Tabla de detalle (full width) */}
+          <div className="card detail-table-section" style={{ padding: 16, marginTop: 24 }}>
             <div className="card-title" style={{ fontSize: 16 }}>
               Detalle: Top 10 anuncios por ventas
             </div>
@@ -396,7 +343,7 @@ const DashboardHome: React.FC = () => {
         </>
       )}
     </Layout>
-  );
+   );
 };
 
 export default DashboardHome;

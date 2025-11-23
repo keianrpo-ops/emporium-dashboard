@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
-// import TopAdsTable from '../../components/TopAdsTable'; // ❌ Ya no la usamos
 import { fetchSheet } from '../../services/googleSheetsService';
 
 import { Doughnut, Bar } from 'react-chartjs-2';
@@ -86,7 +85,6 @@ const formatCurrency = (value: unknown): string => {
 
 const formatDate = (value: unknown): string => {
   if (!value) return '';
-  // Asumimos formato YYYY-MM-DD o similar
   const d = new Date(String(value));
   if (Number.isNaN(d.getTime())) return String(value);
   return d.toLocaleDateString('es-CO', {
@@ -328,14 +326,17 @@ const SalesTable: React.FC<SalesTableProps> = ({ rows }) => {
             const cliente = row['Nombre_Cliente'];
             const ciudad = row['Ciudad'];
             const direccion1 = row['Dirección_1'] ?? row['Direccion_1'];
-            const direccion2 = row['Dirección_2_Barrio'] ?? row['Direccion_2_Barrio'];
+            const direccion2 =
+              row['Dirección_2_Barrio'] ?? row['Direccion_2_Barrio'];
             const telefono = row['Teléfono'] ?? row['Telefono'];
             const transportadora = row['Transportadora_Dropi'];
             const estadoLog = row['EstadoLogistico_Dropi'];
             const valorVenta = row['Valor_Venta'];
             const utilidad = row['Utilidad'];
 
-            const direccion = [direccion1, direccion2].filter(Boolean).join(' - ');
+            const direccion = [direccion1, direccion2]
+              .filter(Boolean)
+              .join(' - ');
 
             return (
               <tr
@@ -388,6 +389,32 @@ const tdStyle: React.CSSProperties = {
   fontSize: 11,
   verticalAlign: 'top',
 };
+
+// ========================
+// TARJETAS KPI "HOY"
+// ========================
+
+type TodayKpiColor = 'cyan' | 'green' | 'orange';
+
+interface TodayKpiCardProps {
+  label: string;
+  value: string;
+  sublabel?: string;
+  color: TodayKpiColor;
+}
+
+const TodayKpiCard: React.FC<TodayKpiCardProps> = ({
+  label,
+  value,
+  sublabel,
+  color,
+}) => (
+  <div className={`today-kpi-card today-kpi-card--${color}`}>
+    <div className="today-kpi-card__label">{label}</div>
+    <div className="today-kpi-card__value">{value}</div>
+    {sublabel && <div className="today-kpi-card__sublabel">{sublabel}</div>}
+  </div>
+);
 
 // ========================
 // COMPONENTE PRINCIPAL
@@ -525,7 +552,58 @@ const DashboardHome: React.FC = () => {
 
       {!loading && !error && (
         <>
-          <DateRangeBar />
+          {/* CABECERA + RANGO DE FECHAS */}
+          <section className="date-range-card">
+            <div className="date-range-card__header">
+              <h1 className="app-title">
+                Fennix Emporium · Ads & Commerce Hub
+              </h1>
+              <p className="app-subtitle">
+                Dashboard general · todos los indicadores responden al rango
+                seleccionado.
+              </p>
+            </div>
+
+            <div className="date-range-card__controls">
+              <DateRangeBar />
+            </div>
+          </section>
+
+          {/* TARJETAS "HOY" TIPO AZBOAR */}
+          <section className="today-kpis-row">
+            <TodayKpiCard
+              color="cyan"
+              label="Margen bruto HOY"
+              value={
+                ingresoTotal > 0
+                  ? `${((utilidadTotal / ingresoTotal) * 100).toFixed(1)}%`
+                  : '0%'
+              }
+              sublabel={`Ingresos: $ ${ingresoTotal.toLocaleString('es-CO')}`}
+            />
+
+            <TodayKpiCard
+              color="green"
+              label="ROAS HOY"
+              value={
+                costoPublicidad > 0
+                  ? `${(ingresoTotal / costoPublicidad).toFixed(2)}x`
+                  : '0.00x'
+              }
+              sublabel={
+                costoPublicidad > 0
+                  ? `Inversión ads: $ ${costoPublicidad.toLocaleString('es-CO')}`
+                  : 'Sin inversión registrada'
+              }
+            />
+
+            <TodayKpiCard
+              color="orange"
+              label="Ventas HOY"
+              value={ventas.length.toString()}
+              sublabel="Pedidos registrados en el rango actual"
+            />
+          </section>
 
           {/* Barra KPI principal */}
           <KpiGrid kpis={kpis} />
@@ -564,7 +642,6 @@ const DashboardHome: React.FC = () => {
                 Tendencia Mensual de Utilidad
               </div>
               <div style={{ height: 380 }}>
-                {/* Dummy data temporal */}
                 <Bar
                   data={{
                     labels: ['Ene', 'Feb', 'Mar'],
@@ -635,13 +712,13 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Tabla ejecutiva de ventas (todo el ancho, con buen margen abajo) */}
+          {/* Tabla ejecutiva de ventas */}
           <div
             className="card detail-table-section"
             style={{
               padding: 16,
               marginTop: 24,
-              marginBottom: 48, // margen inferior para despegar del footer
+              marginBottom: 48,
               background: '#ffffff',
             }}
           >

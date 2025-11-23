@@ -111,6 +111,33 @@ body {
   font-weight: 500;
 }
 
+
+/* Estructura general */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #e5f3fb; /* fondo suave para que las cards destaquen */
+}
+
+/* Barra izquierda con sombra marcada a la derecha */
+.app-shell__sidebar {
+  width: 260px; /* ajusta según tu sidebar real */
+  background: #00bcd4; /* tu turquesa actual o el color que ya tienes */
+  box-shadow: 4px 0 18px rgba(15, 23, 42, 0.16); /* sombra hacia la derecha */
+  position: relative;
+  z-index: 20;
+}
+
+/* Contenido principal con buen padding y separación del footer */
+.app-shell__main {
+  flex: 1;
+  padding: 24px 32px 72px; /* ← bottom grande para despegar el footer */
+  background: #f1f5f9;     /* gris muy claro para contraste con las cards */
+}
+
+
+
+
 /* ======================
     MAIN + TOPBAR (Claro)
     ====================== */

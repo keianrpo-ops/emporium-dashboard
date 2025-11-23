@@ -1,5 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+// src/components/Layout.tsx (ejemplo)
+import React, { PropsWithChildren } from 'react';
+import Sidebar from './Sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;

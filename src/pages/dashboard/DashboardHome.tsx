@@ -5,9 +5,7 @@ import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
-import type { Kpi } from '../../types';
 
-// Charts
 import { Doughnut, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -19,9 +17,19 @@ import {
   BarElement,
 } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+);
 
-// ================== TIPOS ==================
+// ========================
+// TIPOS Y HELPERS
+// ========================
+
 type VentaRow = {
   [key: string]: any;
   Valor_Venta?: string | number;
@@ -37,7 +45,15 @@ type CostosFijosRow = {
   Monto_Mensual?: string | number;
 };
 
-// ================== HELPERS ==================
+type Kpi = {
+  id: string;
+  label: string;
+  value: number;
+  currency?: boolean;
+  unit?: string;
+  color?: string;
+};
+
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -53,9 +69,8 @@ const toNumber = (value: unknown): number => {
 
 const sumByKey = <T extends Record<string, any>>(
   rows: T[],
-  key: keyof T
-): number =>
-  rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
+  key: keyof T,
+): number => rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
 
 const getRows = <T extends Record<string, any>>(data: any): T[] => {
   if (Array.isArray(data?.rows)) return data.rows as T[];
@@ -63,18 +78,20 @@ const getRows = <T extends Record<string, any>>(data: any): T[] => {
   return [];
 };
 
-// ============ GRÁFICA DONA =============
+// ========================
+// DONUT DE COSTOS
+// ========================
+
 const getCostosDoughnutData = (
   costoProveedor: number,
   costoEnvio: number,
   costoPublicidad: number,
   comisionesPlata: number,
-  utilidadBruta: number
+  utilidadBruta: number,
 ) => {
   const totalCostos =
     costoProveedor + costoEnvio + costoPublicidad + comisionesPlata;
   const total = totalCostos + utilidadBruta;
-
   if (total === 0) return { labels: [], datasets: [] };
 
   return {
@@ -116,12 +133,133 @@ const doughnutOptions: any = {
   plugins: {
     legend: {
       position: 'bottom' as const,
-      labels: { color: '#64748B', boxWidth: 14 },
+      labels: {
+        color: '#64748B',
+        boxWidth: 14,
+      },
     },
   },
 };
 
-// ================== COMPONENTE ==================
+// ========================
+// COMPONENTE GAUGE CARD
+// ========================
+
+const computeGaugePercent = (kpi: Kpi): number => {
+  // Sencillo: si es %, usamos el valor. Si no, dejamos un 70% fijo de referencia.
+  if (kpi.unit === '%') {
+    return Math.max(0, Math.min(100, kpi.value));
+  }
+  return 70;
+};
+
+const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
+  const percent = computeGaugePercent(kpi);
+  const needleAngle = (percent / 100) * 120 - 60; // de -60° a +60°
+
+  return (
+    <div
+      className="card card-gauge"
+      style={{
+        textAlign: 'center',
+        padding: '20px 10px',
+        height: 140,
+        background: '#ffffff',
+        borderRadius: 10,
+        boxShadow: '0 8px 20px rgba(15,23,42,0.1)',
+      }}
+    >
+      <p className="kpi-label" style={{ fontSize: 12, margin: 0 }}>
+        {kpi.label}
+      </p>
+      <h2
+        className="kpi-value"
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          color: kpi.color || '#0f172a',
+          margin: '8px 0',
+        }}
+      >
+        {kpi.currency
+          ? `$ ${kpi.value.toLocaleString('es-CO')}`
+          : kpi.value.toLocaleString('es-CO')}
+        {kpi.unit ?? ''}
+      </h2>
+
+      {/* Gauge simple con aguja */}
+      <div
+        style={{
+          position: 'relative',
+          height: 60,
+          borderRadius: 999,
+          marginTop: 6,
+          background:
+            'linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 50%, #e2e8f0 100%)',
+        }}
+      >
+        {/* barra de progreso */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 10,
+            right: 10,
+            bottom: 18,
+            height: 8,
+            borderRadius: 999,
+            background: '#e2e8f0',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: '100%',
+              borderRadius: 999,
+              background: kpi.color || '#0ea5e9',
+              transition: 'width 0.4s ease',
+            }}
+          />
+        </div>
+
+        {/* aguja */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 10,
+            width: 2,
+            height: 24,
+            background: kpi.color || '#0ea5e9',
+            transformOrigin: 'bottom center',
+            transform: `translateX(-50%) rotate(${needleAngle}deg)`,
+            transition: 'transform 0.4s ease',
+          }}
+        />
+
+        {/* pivote */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 8,
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: `2px solid ${kpi.color || '#0ea5e9'}`,
+            transform: 'translateX(-50%)',
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// ========================
+// COMPONENTE PRINCIPAL
+// ========================
+
 const DashboardHome: React.FC = () => {
   const [ventas, setVentas] = useState<VentaRow[]>([]);
   const [costosFijos, setCostosFijos] = useState<CostosFijosRow[]>([]);
@@ -149,7 +287,7 @@ const DashboardHome: React.FC = () => {
     load();
   }, []);
 
-  // === CÁLCULOS PRINCIPALES ===
+  // Cálculos principales
   const ingresoTotal = sumByKey<VentaRow>(ventas, 'Valor_Venta');
   const costoProveedor = sumByKey<VentaRow>(ventas, 'Costo_Proveedor');
   const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envio');
@@ -158,7 +296,7 @@ const DashboardHome: React.FC = () => {
   const utilidadTotal = sumByKey<VentaRow>(ventas, 'Utilidad');
   const totalCostosFijos = sumByKey<CostosFijosRow>(
     costosFijos,
-    'Monto_Mensual'
+    'Monto_Mensual',
   );
   const utilidadNeta = utilidadTotal - totalCostosFijos;
 
@@ -167,10 +305,9 @@ const DashboardHome: React.FC = () => {
     costoEnvio,
     costoPublicidad,
     comisionesPlata,
-    utilidadTotal
+    utilidadTotal,
   );
 
-  // === KPIs PRINCIPALES (se usan en KpiGrid y en las cards) ===
   const kpis: Kpi[] = [
     {
       id: 'ingreso-total',
@@ -233,48 +370,65 @@ const DashboardHome: React.FC = () => {
     },
     {
       id: 'conv',
-      label: 'Conversiones',
+      label: 'Conversiones (estimado)',
       value: ventas.length * 1.5,
       color: '#F97316',
     },
   ];
 
-  // ================== RENDER ==================
   return (
-      return (
     <Layout>
       {loading && <p>Cargando datos del dashboard...</p>}
       {error && <p style={{ color: '#ef4444' }}>{error}</p>}
 
       {!loading && !error && (
         <>
-          {/* Barra de rango de fechas */}
           <DateRangeBar />
 
-          {/* KPIs superiores (tarjetas tipo WordOps, usando tu KpiGrid actualizado) */}
+          {/* Barra KPI original (puedes dejarla o quitarla) */}
           <KpiGrid kpis={kpis} />
 
-          {/* 2. Gráfico grande + Dona + indicadores (2 columnas) */}
+          {/* 1. KPIs estilo “WordOps” con aguja */}
+          <div
+            className="status-kpis-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 24,
+              marginBottom: 24,
+              marginTop: 24,
+            }}
+          >
+            {kpis.slice(0, 4).map((kpi) => (
+              <GaugeCard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+
+          {/* 2. Gráfico grande + Dona + indicadores */}
           <div
             className="main-metrics-section"
             style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
               gap: 24,
-              marginTop: 24,
             }}
           >
-            {/* Columna izquierda: Bar de tendencia mensual */}
-            <div className="card chart-large" style={{ height: 450, padding: 20 }}>
+            {/* Columna izquierda: Bar */}
+            <div
+              className="card chart-large"
+              style={{ height: 450, padding: 20, background: '#ffffff' }}
+            >
               <div className="card-title" style={{ fontSize: 16 }}>
                 Tendencia Mensual de Utilidad
               </div>
               <div style={{ height: 380 }}>
+                {/* Dummy data por ahora */}
                 <Bar
                   data={{
-                    labels: ['Ene', 'Feb', 'Mar'], // luego conectamos con datos reales
+                    labels: ['Ene', 'Feb', 'Mar'],
                     datasets: [
                       {
+                        label: 'Utilidad',
                         data: [1, 2, 3],
                         backgroundColor: '#00BCD4',
                       },
@@ -285,22 +439,31 @@ const DashboardHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna derecha: Dona + badges de indicadores */}
+            {/* Columna derecha: Dona + badges */}
             <div
               className="status-and-donut"
               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
             >
-              {/* Gráfico de dona: estructura de costos vs utilidad */}
-              <div className="card" style={{ padding: 20, flexGrow: 1 }}>
+              <div
+                className="card"
+                style={{ padding: 20, flexGrow: 1, background: '#ffffff' }}
+              >
                 <div className="card-title">Estructura de Costos vs Utilidad</div>
                 <div style={{ height: 200, margin: '10px 0' }}>
-                  <Doughnut data={costosDoughnutData} options={doughnutOptions} />
+                  <Doughnut
+                    data={costosDoughnutData}
+                    options={doughnutOptions}
+                  />
                 </div>
               </div>
 
-              {/* Badges de indicadores clave */}
-              <div className="card status-badges" style={{ padding: 15 }}>
-                <div className="card-title">Indicadores Clave de Rentabilidad</div>
+              <div
+                className="card status-badges"
+                style={{ padding: 15, background: '#ffffff' }}
+              >
+                <div className="card-title">
+                  Indicadores Clave de Rentabilidad
+                </div>
                 {rightSideKpis.map((kpi) => (
                   <div
                     key={kpi.id}
@@ -320,8 +483,8 @@ const DashboardHome: React.FC = () => {
                       }}
                     >
                       {kpi.currency
-                        ? `$ ${Number(kpi.value || 0).toLocaleString('es-CO')}`
-                        : Number(kpi.value || 0).toLocaleString('es-CO')}
+                        ? `$ ${kpi.value.toLocaleString('es-CO')}`
+                        : kpi.value.toLocaleString('es-CO')}
                       {kpi.unit ?? ''}
                     </span>
                   </div>
@@ -330,8 +493,11 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Tabla de detalle (full width) */}
-          <div className="card detail-table-section" style={{ padding: 16, marginTop: 24 }}>
+          {/* 3. Tabla detalle */}
+          <div
+            className="card detail-table-section"
+            style={{ padding: 16, marginTop: 24, background: '#ffffff' }}
+          >
             <div className="card-title" style={{ fontSize: 16 }}>
               Detalle: Top 10 anuncios por ventas
             </div>
@@ -343,7 +509,7 @@ const DashboardHome: React.FC = () => {
         </>
       )}
     </Layout>
-   );
+  );
 };
 
 export default DashboardHome;

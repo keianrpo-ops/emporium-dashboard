@@ -89,7 +89,20 @@ const parseDate = (value: unknown): Date | null => {
   return null;
 };
 
-const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS_SHORT = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+];
 
 // ========================
 // DONUT DE COSTOS
@@ -159,10 +172,10 @@ const doughnutOptions: any = {
 // ========================
 
 const computeGaugePercent = (kpi: Kpi): number => {
+  // Solo usamos la aguja si es porcentaje
   if (kpi.unit === '%') {
     return Math.max(0, Math.min(100, kpi.value));
   }
-  // para KPIs en plata o “x”, dejamos un 70 % de referencia visual
   return 70;
 };
 
@@ -383,7 +396,13 @@ const DashboardHome: React.FC = () => {
 
   const monthlyUtilidadData = getMonthlyUtilidadChartData(ventas);
 
-  const kpis: Kpi[] = [
+  const ticketPromedio =
+    ventas.length > 0 ? ingresoTotal / ventas.length : 0;
+
+  // ========================
+  // BLOQUE 1: KPIs PRINCIPALES (dinero)
+  // ========================
+  const mainKpis: Kpi[] = [
     {
       id: 'ingreso-total',
       label: 'Ingreso total (rango)',
@@ -428,21 +447,57 @@ const DashboardHome: React.FC = () => {
     },
   ];
 
-  const rightSideKpis: Kpi[] = [
+  // ========================
+  // BLOQUE 2: KPIs DE AGUJA (porcentajes, SIN duplicar los de arriba)
+  // ========================
+  const gaugeKpis: Kpi[] = [
     {
-      id: 'margen',
-      label: 'Margen Bruto (%)',
+      id: 'margen-bruto',
+      label: 'Margen bruto sobre ingresos',
       value: ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0,
       unit: '%',
       color: '#22C55E',
     },
     {
+      id: 'margen-neto',
+      label: 'Margen neto sobre ingresos',
+      value: ingresoTotal > 0 ? (utilidadNeta / ingresoTotal) * 100 : 0,
+      unit: '%',
+      color: '#0EA5E9',
+    },
+    {
+      id: 'peso-costos-fijos',
+      label: 'Costos fijos / utilidad bruta',
+      value: utilidadTotal > 0 ? (totalCostosFijos / utilidadTotal) * 100 : 0,
+      unit: '%',
+      color: '#F97316',
+    },
+    {
+      id: 'comisiones-share',
+      label: 'Comisiones / ingresos',
+      value: ingresoTotal > 0 ? (comisionesPlata / ingresoTotal) * 100 : 0,
+      unit: '%',
+      color: '#A855F7',
+    },
+  ];
+
+  // ========================
+  // BLOQUE 3: INDICADORES LATERALES
+  // ========================
+  const rightSideKpis: Kpi[] = [
+    {
       id: 'roas',
       label: 'ROAS',
-      // ROAS correcto: Ingreso / Costo en Publicidad
       value: costoPublicidad > 0 ? ingresoTotal / costoPublicidad : 0,
       unit: 'x',
       color: '#00BCD4',
+    },
+    {
+      id: 'ticket-promedio',
+      label: 'Ticket promedio',
+      value: ticketPromedio,
+      currency: true,
+      color: '#22C55E',
     },
     {
       id: 'conv',
@@ -461,10 +516,10 @@ const DashboardHome: React.FC = () => {
         <>
           <DateRangeBar />
 
-          {/* Barra KPI original */}
-          <KpiGrid kpis={kpis} />
+          {/* 1. KPIs principales (tarjetas normales) */}
+          <KpiGrid kpis={mainKpis} />
 
-          {/* 1. KPIs estilo “WordOps” con aguja */}
+          {/* 2. KPIs tipo “status” con aguja, SIN duplicar los anteriores */}
           <div
             className="status-kpis-grid"
             style={{
@@ -475,12 +530,12 @@ const DashboardHome: React.FC = () => {
               marginTop: 24,
             }}
           >
-            {kpis.slice(0, 4).map((kpi) => (
+            {gaugeKpis.map((kpi) => (
               <GaugeCard key={kpi.id} kpi={kpi} />
             ))}
           </div>
 
-          {/* 2. Gráfico grande + Dona + indicadores */}
+          {/* 3. Gráfico grande + Dona + indicadores laterales */}
           <div
             className="main-metrics-section"
             style={{
@@ -514,7 +569,9 @@ const DashboardHome: React.FC = () => {
                 className="card"
                 style={{ padding: 20, flexGrow: 1, background: '#ffffff' }}
               >
-                <div className="card-title">Estructura de Costos vs Utilidad</div>
+                <div className="card-title">
+                  Estructura de Costos vs Utilidad
+                </div>
                 <div style={{ height: 200, margin: '10px 0' }}>
                   <Doughnut
                     data={costosDoughnutData}
@@ -559,7 +616,7 @@ const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Tabla detalle */}
+          {/* 4. Tabla detalle */}
           <div
             className="card detail-table-section"
             style={{ padding: 16, marginTop: 24, background: '#ffffff' }}
@@ -568,8 +625,6 @@ const DashboardHome: React.FC = () => {
               Detalle: Top 10 anuncios por ventas
             </div>
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
-              {/* TODO: cuando tengamos la estructura exacta de la hoja de anuncios,
-                  aquí mapeamos las filas reales */}
               <TopAdsTable rows={[]} title="Top 10 anuncios por ventas" />
             </div>
           </div>

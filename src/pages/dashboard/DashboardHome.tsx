@@ -143,6 +143,8 @@ const DashboardHome: React.FC = () => {
   ];
 
 
+  // --- Código a REEMPLAZAR al final de src/pages/dashboard/DashboardHome.tsx ---
+
   return (
     <Layout>
       {loading && <p>Cargando datos del dashboard...</p>}
@@ -151,8 +153,9 @@ const DashboardHome: React.FC = () => {
       {!loading && !error && (
         <>
           <DateRangeBar /> 
+          <KpiGrid kpis={kpis} /> 
 
-          {/* 1. KPIs de Estado (Fila Superior) - ESTILO WORDOPS MEDIDOR */}
+          {/* 1. KPIs de Estado (Fila Superior) */}
           <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: '24px' }}>
               {kpis.slice(0, 4).map(kpi => (
                   <div key={kpi.id} className="card card-gauge" style={{ textAlign: 'center', padding: '20px 10px', height: '140px' }}>
@@ -160,7 +163,6 @@ const DashboardHome: React.FC = () => {
                     <h2 className="kpi-value" style={{ fontSize: 24, fontWeight: 700, color: kpi.color }}>
                         {kpi.currency ? `$${kpi.value.toLocaleString('es-CO')}` : kpi.value}
                     </h2>
-                    {/* Placeholder para el componente de Aguja/Gauge */}
                     <div style={{ height: 60, background: '#F0F4F8', borderRadius: '4px', marginTop: '10px' }}>
                         <p style={{ fontSize: 11, color: '#64748B' }}>[Medidor visual aquí]</p>
                     </div>
@@ -175,7 +177,6 @@ const DashboardHome: React.FC = () => {
             <div className="card chart-large" style={{ height: 450, padding: 20 }}>
               <div className="card-title" style={{ fontSize: 16 }}>Tendencia Mensual de Utilidad</div>
               <div style={{ height: '380px' }}>
-                {/* Usamos Bar como placeholder de Tendencia */}
                 <Bar data={{labels: ['Ene', 'Feb', 'Mar'], datasets: [{data: [1,2,3], backgroundColor: '#00BCD4'}]}} options={{responsive: true, maintainAspectRatio: false}} />
               </div>
             </div>
@@ -192,7 +193,7 @@ const DashboardHome: React.FC = () => {
               </div>
 
               {/* Badges de Estado (como en WordOps) */}
-              <div className className="card status-badges" style={{ padding: 15 }}>
+              <div className="card status-badges" style={{ padding: 15 }}>
                 <div className="card-title">Indicadores Clave de Rentabilidad</div>
                 {rightSideKpis.map(kpi => (
                   <div key={kpi.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #E2E8F0' }}>
@@ -201,7 +202,6 @@ const DashboardHome: React.FC = () => {
                   </div>
                 ))}
               </div>
-
             </div>
           </div>
 
@@ -210,11 +210,12 @@ const DashboardHome: React.FC = () => {
           <div className="card detail-table-section" style={{ padding: 16 }}>
             <div className="card-title" style={{ fontSize: 16 }}>Detalle: Top 10 anuncios por ventas</div>
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
-                {/* Placeholder para la tabla */}
                 <TopAdsTable rows={[]} title="" /> 
-           </div> {/* Cierre del último div de la tarjeta */}
+            </div>
+          </div>
+
         </>
-      )} {/* Cierre de la condición !loading && !error */}
+      )}
     </Layout>
   );
 };

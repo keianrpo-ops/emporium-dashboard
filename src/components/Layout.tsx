@@ -1,5 +1,3 @@
-// src/components/Layout.tsx (Corregido para Tema Claro/Cían)
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
@@ -19,8 +17,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-root">
-      {/* Sidebar (Usa el fondo Cían definido en index.css) */}
-      <aside className="sidebar"> 
+      {/* Sidebar */}
+      <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">
             FE
@@ -36,7 +34,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <NavLink
               key={item.path}
               to={item.path}
-              // La clase activa (sidebar-item--active) ahora usa fondo BLANCO
               className={({ isActive }) =>
                 'sidebar-item' + (isActive ? ' sidebar-item--active' : '')
               }
@@ -47,10 +44,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </nav>
       </aside>
 
-      {/* Contenido principal (fondo claro/blanco del body) */}
-      <main className="main-content">
+      {/* Contenido principal */}
+      <main className="main"> {/* <-- CORREGIDO */}
         <header className="main-header">
-          <div className className="main-header-title">Dashboard general</div>
+          <div className="main-header-title">Dashboard general</div> {/* <-- CORREGIDO: Sintaxis limpia */}
         </header>
 
         <section className="main-body">{children}</section>

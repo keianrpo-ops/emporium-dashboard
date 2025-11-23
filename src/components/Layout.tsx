@@ -2,6 +2,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+import fennixLogo from '../assets/fennix-logo.png';
+
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -21,12 +24,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside className="app-shell__sidebar">
         <div className="sidebar-header">
-          <div className="sidebar-logo">FE</div>
-          <div className="sidebar-title">
-            Fennix Emporium
-            <div className="sidebar-subtitle">Ads & Commerce Hub</div>
-          </div>
-        </div>
+
+         <div className="sidebar-logo">
+  <img src={fennixLogo} alt="Fennix Emporium Logo" />
+</div>
+
+<div className="sidebar-title">
+  FENNIX EMPORIUM
+  <div className="sidebar-subtitle">ADS & COMMERCE HUB</div>
+</div>
 
         <nav className="sidebar-menu">
           {menuItems.map((item) => (

@@ -1,12 +1,11 @@
-// src/pages/ConfiguracionPage.tsx (VERSIÓN CON CONTROLES PROFESIONALES)
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 
 // Mock Componente Slider
 const SliderControl: React.FC<{ label: string, value: number, min: number, max: number, unit: string }> = ({ label, value, min, max, unit }) => {
   const [currentValue, setCurrentValue] = useState(value);
-  const percent = ((currentValue - min) / (max - min)) * 100;
-  
+  // Eliminamos 'percent' que causaba el error TS6133
+
   return (
     <div style={{ marginBottom: 20, padding: 12, border: '1px solid #334155', borderRadius: 8, background: '#0f172a' }}>
       <label style={{ fontSize: 14, fontWeight: 600, display: 'block', marginBottom: 8, opacity: 0.9 }}>

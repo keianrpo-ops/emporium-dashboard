@@ -120,37 +120,42 @@ const DashboardHome: React.FC = () => {
 
   return (
     <Layout>
-      <DateRangeBar /> 
-      <KpiGrid kpis={kpis} /> 
+      {loading && <p>Cargando datos del dashboard...</p>}
+      {error && <p style={{ color: '#f87171' }}>Error: {error}</p>}
 
-      <div className="grid-2" style={{ marginTop: 24 }}>
-        {/* Gráfica de Dona: Estructura de Costos vs Utilidad */}
-        <div className="card" style={{ height: 400, padding: 16 }}>
-          <div className="card-title">Estructura de costos vs utilidad</div>
-          <div style={{ width: '100%', height: 'calc(100% - 30px)' }}>
-            {loading ? <p>Cargando gráfica...</p> : (
-              ventas.length > 0 ? (
-                <Doughnut data={costosDoughnutData} options={doughnutOptions} />
-              ) : (
-                <p>No hay datos de ventas para graficar.</p>
-              )
-            )}
-          </div>
-        </div>
+      {!loading && !error && (
+          <>
+            <DateRangeBar /> 
+            <KpiGrid kpis={kpis} /> 
 
-        {/* Gráfica de Barra Apilada o Placeholder */}
-        <div className className="card" style={{ height: 400 }}>
-          <div className="card-title">Tendencia de Costos Mensuales</div>
-          <p style={{ opacity: 0.7 }}>
-            *Gráfica de barra apilada para mostrar la evolución de Costos Fijos, CPA y Utilidad a lo largo del tiempo.
-          </p>
-        </div>
-      </div>
+            <div className="grid-2" style={{ marginTop: 24 }}>
+              {/* Gráfica de Dona: Estructura de Costos vs Utilidad */}
+              <div className="card" style={{ height: 400, padding: 16 }}>
+                <div className="card-title">Estructura de costos vs utilidad</div>
+                <div style={{ width: '100%', height: 'calc(100% - 30px)' }}>
+                  {ventas.length > 0 ? (
+                    <Doughnut data={costosDoughnutData} options={doughnutOptions} />
+                  ) : (
+                    <p>No hay datos de ventas para graficar.</p>
+                  )}
+                </div>
+              </div>
 
-      <TopAdsTable
-        title="Top 10 anuncios por ventas"
-        rows={[]}
-      />
+              {/* Gráfica de Barra Apilada o Placeholder */}
+              <div className="card" style={{ height: 400 }}> {/* <-- CORREGIDO: style prop estaba mal escrita */}
+                <div className="card-title">Tendencia de Costos Mensuales</div>
+                <p style={{ opacity: 0.7 }}>
+                  *Gráfica de barra apilada para mostrar la evolución de Costos Fijos, CPA y Utilidad a lo largo del tiempo.
+                </p>
+              </div>
+            </div>
+
+            <TopAdsTable
+                title="Top 10 anuncios por ventas"
+                rows={[]} // Usando rows={[]} para evitar errores
+            />
+          </>
+      )}
     </Layout>
   );
 };

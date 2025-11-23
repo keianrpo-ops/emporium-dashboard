@@ -8,6 +8,7 @@ import { kpisMock } from '../mockData';
 type CampañaRow = {
   [key: string]: any;
 
+
   Plataforma_Ads?: string;
   ID_Campaña_Ads?: string;
   Nombre_Campaña?: string;
@@ -23,9 +24,9 @@ type CampañaRow = {
   Impresiones?: string | number;
   Alcance?: string | number;
   Clics?: string | number;
-  CTR_%?: string | number;
+  'CTR_%?': string | number;
   CPC?: string | number;
-  'CPM?': string | number;
+  CPM?: string | number;
   Conversiones?: string | number;
   ROAS_Plataforma?: string | number;
   ROAS_Total?: string | number;

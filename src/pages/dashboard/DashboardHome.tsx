@@ -6,6 +6,8 @@ import DateRangeBar from '../../components/DateRangeBar';
 
 import KpiGrid from '../../components/KpiGrid';
 
+import { kpisMock } from '../../mockData';
+
 import TopAdsTable from '../../components/TopAdsTable';
 
 import { fetchSheet } from '../../services/googleSheetsService';
@@ -133,6 +135,21 @@ const getCostosDoughnutData = (
   if (total === 0) return { labels: [], datasets: [] };
 
 
+
+const kpis: Kpi[] = [ // <--- Esta es la línea de declaración
+    // Usamos el spread operator (...) para leer las propiedades de kpisMock
+    { ...kpisMock[0], label: 'Ingreso total (rango)', value: ingresoTotal, currency: true, id: 'ingreso-total', color: '#00BCD4' },
+    { ...kpisMock[1], label: 'Costo producto (proveedor)', value: costoProveedor, currency: true, id: 'costo-prov', color: '#F97316' },
+    { ...kpisMock[2], label: 'Costo envío', value: costoEnvio, currency: true, id: 'costo-envio', color: '#0EA5E9' },
+    { ...kpisMock[3], label: 'Comisiones plataforma', value: comisionesPlata, currency: true, id: 'comisiones', color: '#A855F7' },
+    { ...kpisMock[4], label: 'Costo publicidad (CPA)', value: costoPublicidad, currency: true, id: 'cpa', color: '#EF4444' },
+    { ...kpisMock[5], label: 'Utilidad bruta total', value: utilidadTotal, currency: true, id: 'utilidad-bruta', color: '#22C55E' },
+    { ...kpisMock[6], label: 'Utilidad neta final', value: utilidadNeta, currency: true, id: 'utilidad-neta', color: '#22C55E' },
+    { ...kpisMock[7], label: 'Costos fijos mensuales', value: totalCostosFijos, currency: true, id: 'costos-fijos', color: '#64748B' },
+];
+
+
+const rightSideKpis: Kpi[] = [ /* ... */ ]; // Esto también va aquí.
 
   return {
 

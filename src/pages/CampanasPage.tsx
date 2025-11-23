@@ -25,7 +25,7 @@ type CampañaRow = {
   Clics?: string | number;
   CTR_%?: string | number;
   CPC?: string | number;
-  CPM?: string | number;
+  'CPM?': string | number;
   Conversiones?: string | number;
   ROAS_Plataforma?: string | number;
   ROAS_Total?: string | number;

@@ -1,9 +1,7 @@
-// src/pages/dashboard/DashboardHome.tsx (VERSIÓN FINAL Y CORREGIDA)
-
 import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
-import KpiGrid from '../../components/KpiGrid'; // Mantener si se usa, si no eliminar
+import KpiGrid from '../../components/KpiGrid'; 
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
 import { kpisMock } from '../../mockData'; 
@@ -13,71 +11,130 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 // ======================================================================
-// === TIPOS Y HELPERS (Definidos LOCALMENTE) ===
-// (Asegúrate de que tus helpers y tipos esten aqui o importados correctamente)
+// === TIPOS Y HELPERS (Definidos para que no fallen el build) ===
 // ======================================================================
 type VentaRow = { [key: string]: any; Valor_Venta?: string | number; Costo_Proveedor?: string | number; Costo_Envio?: string | number; Costo_CPA?: string | number; Costo_de_Venta?: string | number; Utilidad?: string | number; };
 type CostosFijosRow = { [key: string]: any; Monto_Mensual?: string | number; };
-
 type Kpi = { label: string; value: number; currency?: boolean; unit?: string; id: string; color?: string; };
 
-const toNumber = (value: unknown): number => { /* ... */ return 0; };
-const sumByKey = <T extends Record<string, any>>(rows: T[], key: keyof T): number => { /* ... */ return 0; };
-const getRows = <T extends Record<string, any>>(data: any): T[] => { /* ... */ return []; };
+
+// --- DEFINICIONES DE FUNCIONES AUXILIARES (Para evitar TS6133) ---
+
+const toNumber = (value: unknown): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+        const normalized = value
+          .replace(/[\s$€]/g, '')
+          .replace(/\./g, '')
+          .replace(',', '.');
+        const n = Number(normalized);
+        return Number.isNaN(n) ? 0 : n;
+    }
+    return 0;
+};
+
+const sumByKey = <T extends Record<string, any>>(
+  rows: T[],
+  key: keyof T
+): number =>
+  rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
+
+const getRows = <T extends Record<string, any>>(data: any): T[] => {
+  if (Array.isArray(data?.rows)) return data.rows as T[];
+  if (Array.isArray(data)) return data as T[];
+  return [];
+};
+
+
 const getCostosDoughnutData = (
   costoProveedor: number, costoEnvio: number, costoPublicidad: number,
   comisionesPlata: number, utilidadBruta: number
-) => { /* ... */ return { labels: [], datasets: [] }; };
-const doughnutOptions: any = { /* ... */ };
+) => {
+  const totalCostos = costoProveedor + costoEnvio + costoPublicidad + comisionesPlata;
+  const total = totalCostos + utilidadBruta;
+  if (total === 0) return { labels: [], datasets: [] };
+
+  return {
+    labels: ['Utilidad Bruta', 'Costo Proveedor', 'Costo Envío', 'Costo Publicidad (CPA)', 'Comisiones Plataforma'],
+    datasets: [
+      {
+        data: [utilidadBruta, costoProveedor, costoEnvio, costoPublicidad, comisionesPlata],
+        backgroundColor: ['#22c55e', '#f97316', '#0ea5e9', '#eab308', '#a855f7'],
+        borderWidth: 2, borderColor: '#FFFFFF', hoverOffset: 4,
+      },
+    ],
+  };
+};
+
+const doughnutOptions: any = { 
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%', 
+    plugins: {
+        legend: { position: 'bottom' as const, labels: { color: '#64748B', boxWidth: 14 } },
+    }
+};
 
 // ======================================================================
-// === COMPONENTE PRINCIPAL ===
+// === COMPONENTE PRINCIPAL (ESTRUCTURA WORDOPS) ===
 // ======================================================================
 
 const DashboardHome: React.FC = () => {
   const [ventas, setVentas] = useState<VentaRow[]>([]);
   const [costosFijos, setCostosFijos] = useState<CostosFijosRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // USADO
+  const [error, setError] = useState<string | null>(null); // USADO
 
   useEffect(() => {
-    // ... (Tu lógica de useEffect para cargar datos) ...
+    const load = async () => {
+      try {
+        const [ventasData, costosFijosData] = await Promise.all([
+          fetchSheet('Ventas'), // USADO
+          fetchSheet('Costos_Fijos'), // USADO
+        ]);
+
+        const ventasRows = getRows<VentaRow>(ventasData); // USADO
+        const costosFijosRows = getRows<CostosFijosRow>(costosFijosData); // USADO
+
+        setVentas(ventasRows); // USADO
+        setCostosFijos(costosFijosRows); // USADO
+      } catch (e) {
+        console.error(e);
+        setError('No pudimos leer los datos de Google Sheets.'); // USADO
+      } finally {
+        setLoading(false); // USADO
+      }
+    };
+    load();
   }, []);
 
-  // ----------------------------------------------------
-  // === DEFINICIÓN DE CÁLCULOS (Variables USADAS AHORA) ===
-  // ----------------------------------------------------
-  const ingresoTotal = sumByKey<VentaRow>(ventas, 'Valor_Venta');
-  const costoProveedor = sumByKey<VentaRow>(ventas, 'Costo_Proveedor');
-  const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envio');
-  const costoPublicidad = sumByKey<VentaRow>(ventas, 'Costo_CPA');
-  const comisionesPlata = sumByKey<VentaRow>(ventas, 'Costo_de_Venta');
-  const utilidadTotal = sumByKey<VentaRow>(ventas, 'Utilidad');
-  const totalCostosFijos = sumByKey<CostosFijosRow>(costosFijos, 'Monto_Mensual');
-  const utilidadNeta = utilidadTotal - totalCostosFijos; 
+  // === CÁLCULOS PRINCIPALES (USADOS INMEDIATAMENTE) ===
+  const ingresoTotal = sumByKey<VentaRow>(ventas, 'Valor_Venta'); // USADO
+  const costoProveedor = sumByKey<VentaRow>(ventas, 'Costo_Proveedor'); // USADO
+  const costoEnvio = sumByKey<VentaRow>(ventas, 'Costo_Envio'); // USADO
+  const costoPublicidad = sumByKey<VentaRow>(ventas, 'Costo_CPA'); // USADO
+  const comisionesPlata = sumByKey<VentaRow>(ventas, 'Costo_de_Venta'); // USADO
+  const utilidadTotal = sumByKey<VentaRow>(ventas, 'Utilidad'); // USADO
+  const totalCostosFijos = sumByKey<CostosFijosRow>(costosFijos, 'Monto_Mensual'); // USADO
+  const utilidadNeta = utilidadTotal - totalCostosFijos; // USADO
   
   const costosDoughnutData = getCostosDoughnutData(costoProveedor, costoEnvio, costoPublicidad, comisionesPlata, utilidadTotal);
 
-
-  // === DEFINICIÓN DE ARRAYS KPI (USADOS DIRECTAMENTE EN EL RETURN) ===
-  // Nota: Estas son las variables que el compilador no podía encontrar.
-
-  const kpis: Kpi[] = [ // Resuelve TS6133: 'kpis'
-      { ...kpisMock[0], label: 'Ingreso total (rango)', value: ingresoTotal, currency: true, id: 'ingreso-total', color: '#00BCD4' }, // Resuelve TS2304: 'ingresoTotal'
-      { ...kpisMock[1], label: 'Costo producto (proveedor)', value: costoProveedor, currency: true, id: 'costo-prov', color: '#F97316' }, // Resuelve TS2304: 'costoProveedor'
-      { ...kpisMock[2], label: 'Costo envío', value: costoEnvio, currency: true, id: 'costo-envio', color: '#0EA5E9' },
-      { ...kpisMock[3], label: 'Comisiones plataforma', value: comisionesPlata, currency: true, id: 'comisiones', color: '#A855F7' },
-      // ... (resto de KPIs)
-      { ...kpisMock[6], label: 'Utilidad neta final', value: utilidadNeta, currency: true, id: 'utilidad-neta', color: '#22C55E' },
-      { ...kpisMock[7], label: 'Costos fijos mensuales', value: totalCostosFijos, currency: true, id: 'costos-fijos', color: '#64748B' }, // Resuelve TS2552: 'totalCostosFijos'
+  // === KPIs SUPERIORES (Estilo Medidor) ===
+  const kpis: Kpi[] = [ // USADO
+      { label: 'Ingreso total (rango)', value: ingresoTotal, currency: true, id: 'ingreso-total', color: '#00BCD4' },
+      { label: 'Utilidad neta final', value: utilidadNeta, currency: true, id: 'utilidad-neta', color: '#22C55E' },
+      { label: 'Costo producto (proveedor)', value: costoProveedor, currency: true, id: 'costo-prov', color: '#F97316' },
+      { label: 'Costo publicidad (CPA)', value: costoPublicidad, currency: true, id: 'cpa', color: '#EF4444' },
+      { label: 'Utilidad bruta total', value: utilidadTotal, currency: true, id: 'utilidad-bruta', color: '#22C55E' },
+      { label: 'Comisiones plataforma', value: comisionesPlata, currency: true, id: 'comisiones', color: '#A855F7' },
   ];
-  
-  const rightSideKpis: Kpi[] = [ // Resuelve TS6133: 'rightSideKpis'
+  const rightSideKpis: Kpi[] = [ // USADO
       { label: 'Margen Bruto (%)', value: (ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0), unit: '%', id: 'margen', color: '#22C55E' },
       { label: 'ROAS', value: (totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0), unit: 'x', id: 'roas', color: '#00BCD4' },
       { label: 'Conversiones', value: (ventas.length * 1.5), id: 'conv', color: '#F97316' },
   ];
-  // ----------------------------------------------------
+
 
   return (
     <Layout>
@@ -89,14 +146,13 @@ const DashboardHome: React.FC = () => {
           <DateRangeBar /> 
 
           {/* 1. KPIs de Estado (Fila Superior) - ESTILO WORDOPS MEDIDOR */}
-          <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: '24px' }}>
+          <div className="status-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24, marginBottom: '24px' }}>
               {kpis.slice(0, 4).map(kpi => (
                   <div key={kpi.id} className="card card-gauge" style={{ textAlign: 'center', padding: '20px 10px', height: '140px' }}>
                     <p className="kpi-label">{kpi.label}</p>
                     <h2 className="kpi-value" style={{ fontSize: 24, fontWeight: 700, color: kpi.color }}>
                         {kpi.currency ? `$${kpi.value.toLocaleString('es-CO')}` : kpi.value}
                     </h2>
-                    {/* Placeholder para el componente de Aguja/Gauge */}
                     <div style={{ height: 60, background: '#F0F4F8', borderRadius: '4px', marginTop: '10px' }}>
                         <p style={{ fontSize: 11, color: '#64748B' }}>[Medidor visual aquí]</p>
                     </div>
@@ -145,6 +201,7 @@ const DashboardHome: React.FC = () => {
           <div className="card detail-table-section" style={{ padding: 16 }}>
             <div className="card-title" style={{ fontSize: 16 }}>Detalle: Top 10 anuncios por ventas</div>
             <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                {/* Placeholder para la tabla */}
                 <TopAdsTable rows={[]} title="" /> 
             </div>
           </div>

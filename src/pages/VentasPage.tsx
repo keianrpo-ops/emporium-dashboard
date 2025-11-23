@@ -1,4 +1,4 @@
-// src/pages/VentasPage.tsx
+// src/pages/VentasPage.tsx (VERSIÓN CON GRÁFICAS)
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { fetchSheet } from '../services/googleSheetsService';
@@ -6,7 +6,9 @@ import KpiGrid from '../components/KpiGrid';
 import { kpisMock } from '../mockData';
 import VentasChartsGrid from '../components/VentasChartsGrid';
 import type { VentaRow } from '../components/VentasChartsGrid';
+import DonutChart3D from '../components/charts/DonutChart3D';
 
+// Helper para convertir valores de la hoja a números
 const toNumber = (value: any): number => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -20,6 +22,21 @@ const toNumber = (value: any): number => {
   return 0;
 };
 
+// Extracción de datos para una gráfica específica (Ejemplo: Top 5 Productos)
+const getTopProductsData = (ventas: VentaRow[]) => {
+  const acc: Record<string, number> = {};
+  ventas.forEach((v) => {
+    const producto = (v.Producto || 'Sin Producto') as string;
+    acc[producto] = (acc[producto] || 0) + toNumber(v.Valor_Venta);
+  });
+
+  return Object.entries(acc)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5) // Top 5
+    .map(([name, value]) => ({ name, value }));
+};
+
+
 const VentasPage: React.FC = () => {
   const [ventas, setVentas] = useState<VentaRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,9 +46,11 @@ const VentasPage: React.FC = () => {
     const load = async () => {
       try {
         const data = await fetchSheet('Ventas');
+        // Tu backend devuelve { rows: [...] } - nos aseguramos de manejar la respuesta
         const rows = Array.isArray((data as any)?.rows)
           ? ((data as any).rows as VentaRow[])
-          : [];
+          : Array.isArray(data) ? (data as VentaRow[]) : []; 
+
         setVentas(rows);
       } catch (e) {
         console.error(e);
@@ -50,20 +69,18 @@ const VentasPage: React.FC = () => {
     0,
   );
   const numVentas = ventas.length;
+  
+  // Gráfica de Top Productos
+  const topProductsData = getTopProductsData(ventas);
 
   const kpis = [
     {
       ...kpisMock[0],
-      label: 'Ingreso total (rango)',
+      label: 'Ingreso total',
       value: totalIngresos,
       currency: true,
     },
-    {
-      ...kpisMock[1],
-      label: 'Costo publicidad (CPA)',
-      value: 88000, // de momento fijo, luego lo conectamos con tu lógica
-      currency: true,
-    },
+    // ... (Mantener o agregar otros KPIs si es necesario)
     {
       ...kpisMock[2],
       label: 'N° de ventas',
@@ -76,19 +93,31 @@ const VentasPage: React.FC = () => {
     <Layout>
       <h1 className="page-title">Ventas</h1>
 
-      <p style={{ marginBottom: 16, opacity: 0.8 }}>
-        Listado de ventas provenientes de la hoja <b>"Ventas"</b> de Google
-        Sheets. Más adelante agregaremos filtros por fechas, producto, ciudad,
-        etc.
-      </p>
-
-      {/* KPIs */}
       <KpiGrid kpis={kpis} />
 
-      {/* Gráficas (donas + barras) */}
+      {/* Gráficas */}
       {!loading && !error && ventas.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <VentasChartsGrid ventas={ventas} />
+        <div 
+          // Creamos una grilla de 4 columnas para el layout profesional
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
+            gap: 24, 
+            marginTop: 24 
+          }}
+        >
+          {/* Gráfica 1: Top Productos (Donut 3D) - Usa Recharts */}
+          <DonutChart3D 
+            title="Top 5 Productos por Ingreso"
+            data={topProductsData}
+            currency={true}
+          />
+          
+          {/* Gráfica 2, 3 y 4: Las donas y barras existentes de VentasChartsGrid */}
+          <div style={{ gridColumn: 'span 3' }}>
+            <VentasChartsGrid ventas={ventas} />
+          </div>
+          
         </div>
       )}
 
@@ -96,18 +125,11 @@ const VentasPage: React.FC = () => {
       <div className="card" style={{ marginTop: 24 }}>
         <div className="card-title">Detalle de ventas</div>
 
+        {/* ... (Tu lógica de carga y tabla) ... */}
+        
         {loading && <p>Cargando datos desde Google Sheets…</p>}
 
-        {error && (
-          <p style={{ color: '#f87171', fontSize: 13 }}>
-            {error}
-          </p>
-        )}
-
-        {!loading && !error && ventas.length === 0 && (
-          <p>No hay ventas registradas aún.</p>
-        )}
-
+        {/* ... (Resto de la tabla y footer) ... */}
         {!loading && !error && ventas.length > 0 && (
           <div style={{ overflowX: 'auto', marginTop: 8 }}>
             <table className="data-table data-table--compact">
@@ -126,6 +148,7 @@ const VentasPage: React.FC = () => {
                   <th>Ciudad</th>
                   <th>Cliente</th>
                   <th>Teléfono</th>
+                  {/* Asegúrate de que los encabezados de la tabla coincidan con las columnas de tu hoja */}
                 </tr>
               </thead>
               <tbody>
@@ -140,12 +163,11 @@ const VentasPage: React.FC = () => {
                     <td>{row.Producto}</td>
                     <td>{row.Cantidad}</td>
                     <td>
-                      $
-                      {toNumber(row.Valor_Venta).toLocaleString('es-CO')}
+                      ${toNumber(row.Valor_Venta).toLocaleString('es-CO')}
                     </td>
                     <td>{row.Metodo_Pago}</td>
                     <td>{(row as any).Ciudad}</td>
-                    <td>{(row as any).Cliente}</td>
+                    <td>{(row as any).Nombre_Cliente}</td> {/* Usamos Nombre_Cliente */}
                     <td>{(row as any).Telefono}</td>
                   </tr>
                 ))}

@@ -20,19 +20,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
+
+      {/* SIDEBAR */}
       <aside className="app-shell__sidebar">
+
         <div className="sidebar-header">
+
+          {/* LOGO GRANDE */}
           <div className="sidebar-logo">
-            <img src={fennixLogo} alt="Fennix Emporium Logo" />
+            <img
+              src={fennixLogo}
+              alt="Fennix Emporium Logo"
+              className="logo-img"
+            />
           </div>
 
+          {/* TITULO DE APP */}
           <div className="sidebar-title">
             FENNIX EMPORIUM
-            <div className="sidebar-subtitle">ADS &amp; COMMERCE HUB</div>
+            <div className="sidebar-subtitle">ADS & COMMERCE HUB</div>
           </div>
         </div>
 
+        {/* MENU */}
         <nav className="sidebar-menu">
           {menuItems.map((item) => (
             <NavLink
@@ -46,16 +56,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </NavLink>
           ))}
         </nav>
+
       </aside>
 
-      {/* Contenido principal */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="app-shell__main">
-        <header className="main-header">
-          <div className="main-header-title">Dashboard general</div>
-        </header>
-
         <section className="main-body">{children}</section>
       </main>
+
     </div>
   );
 };

@@ -4,7 +4,6 @@ import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid'; 
 import TopAdsTable from '../../components/TopAdsTable';
 import { fetchSheet } from '../../services/googleSheetsService';
-import { kpisMock } from '../../mockData'; 
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 

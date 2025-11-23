@@ -559,7 +559,12 @@ const DashboardHome: React.FC = () => {
 
       {!loading && !error && (
         <>
-          <DateRangeBar />
+         
+     <DateRangeBar
+            margenHoy={margenBrutoHoy}
+            roasHoy={roasHoy}
+            ventasHoy={ventasCantidadHoy}
+          />
 
           {/* Barra KPI principal */}
           <KpiGrid kpis={kpis} />

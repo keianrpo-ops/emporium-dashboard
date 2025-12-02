@@ -1,20 +1,312 @@
 /* src/App.css */
 
-/* Este archivo debe contener estilos mínimos y específicos,
-   ya que la mayor parte del diseño y el tema está en index.css y en los componentes TSX. */
+/* ======================
+   TEMA CLARO FENNIX EMPORIUM
+   ====================== */
+:root {
+  --bg-body: #F0F4F8;
+  --bg-card: #FFFFFF;
+  --bg-card-soft: #F8FAFC;
+  --border-subtle: #E2E8F0;
 
-/* Estilos de la aplicación raíz (generalmente definidos en index.css) */
-/* Los borramos aquí para evitar la redundancia y conflictos */
+  --accent-cyan: #00BCD4;
+  --accent-green: #22C55E;
+  --accent-red: #EF4444;
+  --accent-orange: #F97316;
+  --accent-blue: #3B82F6;
 
-/* Estilos de tabla base (solo si no están en index.css) */
-/* .data-table {
-   width: 100%;
-   ...
-} */
+  --text-primary: #1E293B;
+  --text-muted: #64748B;
+  --text-soft: #94A3B8;
 
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+/* Por si en algún lado usas .app-root */
 .app-root {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-body); 
-  padding: 20px;
+  background: var(--bg-body);
+}
+
+/* ======================
+   LAYOUT GENERAL
+   ====================== */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+/* Sidebar cyan MÁS ANGOSTO */
+.app-shell__sidebar {
+  width: 220px;                /* antes 260px */
+  background-color: #00bcd4;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 4px 0 18px rgba(15, 23, 42, 0.16);
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;              /* muy importante: no se encoge ni empuja el main */
+}
+
+/* Contenido principal */
+.app-shell__main {
+  flex: 1;
+  padding: 24px 24px 72px;
+  background: #f1f5f9;
+  overflow-x: hidden;          /* evita scroll horizontal global */
+  box-sizing: border-box;
+}
+
+/* Contenedor interno del main, para centrar y limitar ancho si quieres */
+.main-body {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ======================
+   SIDEBAR (LOGO, TÍTULOS, MENÚ)
+   ====================== */
+
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Logo */
+.sidebar-logo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.sidebar-logo .logo-img {
+  width: 120px;   /* más pequeño para sidebar angosto */
+  height: auto;
+  filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* Títulos */
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-subtitle {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e3faff;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Menú */
+.sidebar-menu {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.sidebar-item {
+  display: block;
+  padding: 10px 12px;
+  color: white;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(15, 23, 42, 0.18);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  transform: translateX(4px);
+}
+
+.sidebar-item--active {
+  background-color: #ffffff;
+  color: #00bcd4;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+}
+
+/* ======================
+   TOPBAR (si decides usar .topbar en alguna página)
+   ====================== */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.topbar-title {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.topbar-user {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+/* ======================
+   TARJETAS, GRIDS, KPIs
+   (lo mantenemos igual para que funcione con tus páginas)
+   ====================== */
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+/* GRID de KPIs genérico */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kpi-card-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.kpi-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.kpi-gauge {
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.kpi-gauge-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #06b6d4, #22c55e);
+}
+
+.kpi-card-unit {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ======================
+   TABLAS PROFESIONALES
+   ====================== */
+
+.table-container {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.data-table,
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+.data-table thead,
+.table thead {
+  background: var(--bg-card-soft);
+}
+
+.data-table th,
+.table th {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table td,
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ======================
+   RESPONSIVE BÁSICO
+   ====================== */
+
+@media (max-width: 900px) {
+  .app-shell__sidebar {
+    width: 190px;
+    padding: 16px 10px;
+  }
+
+  .sidebar-logo .logo-img {
+    width: 100px;
+  }
+
+  .app-shell__main {
+    padding: 16px 12px 48px;
+  }
 }

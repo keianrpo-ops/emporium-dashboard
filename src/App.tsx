@@ -1,8 +1,10 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import DashboardHome from './pages/dashboard/DashboardHome';
 
+import './App.css';  // ⬅️ IMPORTANTE: aquí cargamos tus estilos de layout
+
+import DashboardHome from './pages/dashboard/DashboardHome';
 import VentasPage from './pages/VentasPage';
 import CampanasPage from './pages/CampanasPage';
 import TarjetasPage from './pages/TarjetasPage';

@@ -1,7 +1,6 @@
 // src/components/Layout.tsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-
 import fennixLogo from '../assets/fennix-logo.png';
 
 interface LayoutProps {
@@ -20,13 +19,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-shell">
-
       {/* SIDEBAR */}
       <aside className="app-shell__sidebar">
-
         <div className="sidebar-header">
-
-          {/* LOGO GRANDE */}
           <div className="sidebar-logo">
             <img
               src={fennixLogo}
@@ -35,14 +30,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             />
           </div>
 
-          {/* TITULO DE APP */}
           <div className="sidebar-title">
             FENNIX EMPORIUM
-            <div className="sidebar-subtitle">ADS & COMMERCE HUB</div>
+            <div className="sidebar-subtitle">ADS &amp; COMMERCE HUB</div>
           </div>
         </div>
 
-        {/* MENU */}
         <nav className="sidebar-menu">
           {menuItems.map((item) => (
             <NavLink
@@ -56,14 +49,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </NavLink>
           ))}
         </nav>
-
       </aside>
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="app-shell__main">
-        <section className="main-body">{children}</section>
+        <section className="main-body">
+          {children}
+        </section>
       </main>
-
     </div>
   );
 };

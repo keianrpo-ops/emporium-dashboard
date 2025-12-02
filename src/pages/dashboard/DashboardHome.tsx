@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import DateRangeBar from '../../components/DateRangeBar';
 import KpiGrid from '../../components/KpiGrid';
-// import TopAdsTable from '../../components/TopAdsTable'; // ❌ Ya no la usamos
 import { fetchSheet } from '../../services/googleSheetsService';
 
 import { Doughnut, Bar } from 'react-chartjs-2';
@@ -86,7 +85,6 @@ const formatCurrency = (value: unknown): string => {
 
 const formatDate = (value: unknown): string => {
   if (!value) return '';
-  // Asumimos formato YYYY-MM-DD o similar
   const d = new Date(String(value));
   if (Number.isNaN(d.getTime())) return String(value);
   return d.toLocaleDateString('es-CO', {
@@ -94,6 +92,90 @@ const formatDate = (value: unknown): string => {
     month: '2-digit',
     day: '2-digit',
   });
+};
+
+// ========================
+// TOP 10 ANUNCIOS / PRODUCTOS
+// ========================
+
+type TopAd = {
+  adId: string;
+  totalSales: number;
+  totalRevenue: number;
+  totalProfit: number;
+};
+
+type TopProduct = {
+  productName: string;
+  totalSales: number;
+  totalRevenue: number;
+  totalProfit: number;
+};
+
+const buildTopAds = (rows: VentaRow[]): TopAd[] => {
+  const map = new Map<string, TopAd>();
+
+  rows.forEach((row) => {
+    const rawId =
+      (row['ID_Anuncio'] ??
+        row['Id_Anuncio'] ??
+        row['ID_Ad'] ??
+        row['Ad_ID'] ??
+        '') as string | number;
+
+    const adId = String(rawId || 'SIN_ID');
+    const venta = toNumber(row['Valor_Venta']);
+    const utilidad = toNumber(row['Utilidad']);
+
+    const current =
+      map.get(adId) || {
+        adId,
+        totalSales: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
+      };
+
+    current.totalSales += 1;
+    current.totalRevenue += venta;
+    current.totalProfit += utilidad;
+
+    map.set(adId, current);
+  });
+
+  return Array.from(map.values()).sort(
+    (a, b) => b.totalRevenue - a.totalRevenue,
+  );
+};
+
+const buildTopProducts = (rows: VentaRow[]): TopProduct[] => {
+  const map = new Map<string, TopProduct>();
+
+  rows.forEach((row) => {
+    const rawName = (row['Producto'] ?? row['Product'] ?? '') as
+      | string
+      | number;
+    const productName = String(rawName || 'SIN_PRODUCTO');
+    const venta = toNumber(row['Valor_Venta']);
+    const utilidad = toNumber(row['Utilidad']);
+
+    const current =
+      map.get(productName) || {
+        productName,
+        totalSales: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
+      };
+
+    current.totalSales += 1;
+    current.totalRevenue += venta;
+    current.totalProfit += utilidad;
+
+    map.set(productName, current);
+  });
+
+  return Array.from(map.values()).sort(
+    (a, b) => b.totalRevenue - a.totalRevenue,
+  );
 };
 
 // ========================
@@ -110,7 +192,19 @@ const getCostosDoughnutData = (
   const totalCostos =
     costoProveedor + costoEnvio + costoPublicidad + comisionesPlata;
   const total = totalCostos + utilidadBruta;
-  if (total === 0) return { labels: [], datasets: [] };
+
+  if (total === 0) {
+    return {
+      labels: ['Sin datos'],
+      datasets: [
+        {
+          data: [1],
+          backgroundColor: ['#e5e7eb'],
+          borderWidth: 0,
+        },
+      ],
+    };
+  }
 
   return {
     labels: [
@@ -129,13 +223,7 @@ const getCostosDoughnutData = (
           costoPublicidad,
           comisionesPlata,
         ],
-        backgroundColor: [
-          '#22c55e',
-          '#f97316',
-          '#0ea5e9',
-          '#eab308',
-          '#a855f7',
-        ],
+        backgroundColor: ['#22c55e', '#f97316', '#0ea5e9', '#eab308', '#a855f7'],
         borderWidth: 2,
         borderColor: '#ffffff',
         hoverOffset: 4,
@@ -157,116 +245,6 @@ const doughnutOptions: any = {
       },
     },
   },
-};
-
-// ========================
-// GAUGE CARD (KPI AGUJA)
-// ========================
-
-const computeGaugePercent = (kpi: Kpi): number => {
-  if (kpi.unit === '%') {
-    return Math.max(0, Math.min(100, kpi.value));
-  }
-  return 70;
-};
-
-const GaugeCard: React.FC<{ kpi: Kpi }> = ({ kpi }) => {
-  const percent = computeGaugePercent(kpi);
-  const needleAngle = (percent / 100) * 120 - 60;
-
-  return (
-    <div
-      className="card card-gauge"
-      style={{
-        textAlign: 'center',
-        padding: '20px 10px',
-        height: 140,
-        background: '#ffffff',
-        borderRadius: 10,
-        boxShadow: '0 8px 20px rgba(15,23,42,0.1)',
-      }}
-    >
-      <p className="kpi-label" style={{ fontSize: 12, margin: 0 }}>
-        {kpi.label}
-      </p>
-      <h2
-        className="kpi-value"
-        style={{
-          fontSize: 24,
-          fontWeight: 700,
-          color: kpi.color || '#0f172a',
-          margin: '8px 0',
-        }}
-      >
-        {kpi.currency
-          ? `$ ${kpi.value.toLocaleString('es-CO')}`
-          : kpi.value.toLocaleString('es-CO')}
-        {kpi.unit ?? ''}
-      </h2>
-
-      <div
-        style={{
-          position: 'relative',
-          height: 60,
-          borderRadius: 999,
-          marginTop: 6,
-          background:
-            'linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 50%, #e2e8f0 100%)',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            left: 10,
-            right: 10,
-            bottom: 18,
-            height: 8,
-            borderRadius: 999,
-            background: '#e2e8f0',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              width: `${percent}%`,
-              height: '100%',
-              borderRadius: 999,
-              background: kpi.color || '#0ea5e9',
-              transition: 'width 0.4s ease',
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 10,
-            width: 2,
-            height: 24,
-            background: kpi.color || '#0ea5e9',
-            transformOrigin: 'bottom center',
-            transform: `translateX(-50%) rotate(${needleAngle}deg)`,
-            transition: 'transform 0.4s ease',
-          }}
-        />
-
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 8,
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: '#ffffff',
-            border: `2px solid ${kpi.color || '#0ea5e9'}`,
-            transform: 'translateX(-50%)',
-          }}
-        />
-      </div>
-    </div>
-  );
 };
 
 // ========================
@@ -328,14 +306,17 @@ const SalesTable: React.FC<SalesTableProps> = ({ rows }) => {
             const cliente = row['Nombre_Cliente'];
             const ciudad = row['Ciudad'];
             const direccion1 = row['Dirección_1'] ?? row['Direccion_1'];
-            const direccion2 = row['Dirección_2_Barrio'] ?? row['Direccion_2_Barrio'];
+            const direccion2 =
+              row['Dirección_2_Barrio'] ?? row['Direccion_2_Barrio'];
             const telefono = row['Teléfono'] ?? row['Telefono'];
             const transportadora = row['Transportadora_Dropi'];
             const estadoLog = row['EstadoLogistico_Dropi'];
             const valorVenta = row['Valor_Venta'];
             const utilidad = row['Utilidad'];
 
-            const direccion = [direccion1, direccion2].filter(Boolean).join(' - ');
+            const direccion = [direccion1, direccion2]
+              .filter(Boolean)
+              .join(' - ');
 
             return (
               <tr
@@ -390,6 +371,51 @@ const tdStyle: React.CSSProperties = {
 };
 
 // ========================
+// HEALTH SCORE HELPER
+// ========================
+
+type HealthStatus = {
+  score: number;   // 0 - 100
+  label: string;
+  color: string;
+  comment: string;
+};
+
+const getHealthStatus = (margen: number, roas: number): HealthStatus => {
+  // Valores razonables para ecommerce de pago
+  if (margen >= 40 && roas >= 3) {
+    return {
+      score: 95,
+      label: 'EXCELENTE',
+      color: '#22c55e',
+      comment: 'La cuenta está muy saludable, puedes escalar presupuesto con cuidado.',
+    };
+  }
+  if (margen >= 25 && roas >= 2) {
+    return {
+      score: 82,
+      label: 'BUENA',
+      color: '#3b82f6',
+      comment: 'Resultados sólidos, podrías probar incrementos graduales de inversión.',
+    };
+  }
+  if (margen >= 15 && roas >= 1.5) {
+    return {
+      score: 68,
+      label: 'NEUTRAL',
+      color: '#eab308',
+      comment: 'La cuenta se sostiene, pero hay poco colchón. Revisa costos y creatividades.',
+    };
+  }
+  return {
+    score: 45,
+    label: 'CRÍTICA',
+    color: '#ef4444',
+    comment: 'Cuidado: margen o ROAS son bajos. Prioriza optimización antes de escalar.',
+  };
+};
+
+// ========================
 // COMPONENTE PRINCIPAL
 // ========================
 
@@ -398,6 +424,7 @@ const DashboardHome: React.FC = () => {
   const [costosFijos, setCostosFijos] = useState<CostosFijosRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [topTab, setTopTab] = useState<'anuncios' | 'productos'>('anuncios');
 
   useEffect(() => {
     const load = async () => {
@@ -433,6 +460,10 @@ const DashboardHome: React.FC = () => {
   );
   const utilidadNeta = utilidadTotal - totalCostosFijos;
 
+  const totalOrdenes = ventas.length;
+  const ticketPromedio =
+    totalOrdenes > 0 ? ingresoTotal / totalOrdenes : 0;
+
   const costosDoughnutData = getCostosDoughnutData(
     costoProveedor,
     costoEnvio,
@@ -440,7 +471,6 @@ const DashboardHome: React.FC = () => {
     comisionesPlata,
     utilidadTotal,
   );
-
 
   // ==== KPIs HOY ====
   const isToday = (value: unknown): boolean => {
@@ -456,7 +486,7 @@ const DashboardHome: React.FC = () => {
   };
 
   const ventasHoy = ventas.filter((v) =>
-    isToday(v['Fecha'] ?? v['fecha'] ?? '')
+    isToday(v['Fecha'] ?? v['fecha'] ?? ''),
   );
 
   const ingresoHoy = sumByKey<VentaRow>(ventasHoy, 'Valor_Venta');
@@ -471,11 +501,12 @@ const DashboardHome: React.FC = () => {
 
   const ventasCantidadHoy = ventasHoy.length;
 
-
-
-
+  // ========================
+  // KPI PRINCIPALES (GAUGES)
+  // ========================
 
   const kpis: Kpi[] = [
+    // Fila 1: RESULTADOS
     {
       id: 'ingreso-total',
       label: 'Ingreso total (rango)',
@@ -484,25 +515,11 @@ const DashboardHome: React.FC = () => {
       color: '#00BCD4',
     },
     {
-      id: 'utilidad-neta',
-      label: 'Utilidad neta final',
-      value: utilidadNeta,
+      id: 'ticket-promedio',
+      label: 'Ticket promedio por orden',
+      value: ticketPromedio,
       currency: true,
-      color: '#22C55E',
-    },
-    {
-      id: 'costo-prov',
-      label: 'Costo producto (proveedor)',
-      value: costoProveedor,
-      currency: true,
-      color: '#F97316',
-    },
-    {
-      id: 'cpa',
-      label: 'Costo publicidad (CPA)',
-      value: costoPublicidad,
-      currency: true,
-      color: '#EF4444',
+      color: '#3B82F6',
     },
     {
       id: 'utilidad-bruta',
@@ -510,6 +527,21 @@ const DashboardHome: React.FC = () => {
       value: utilidadTotal,
       currency: true,
       color: '#22C55E',
+    },
+    // Fila 2: COSTOS
+    {
+      id: 'utilidad-neta',
+      label: 'Utilidad neta final',
+      value: utilidadNeta,
+      currency: true,
+      color: '#22C55E',
+    },
+    {
+      id: 'cpa',
+      label: 'Costo publicidad (CPA)',
+      value: costoPublicidad,
+      currency: true,
+      color: '#EF4444',
     },
     {
       id: 'comisiones',
@@ -520,18 +552,24 @@ const DashboardHome: React.FC = () => {
     },
   ];
 
+  // KPI laterales (texto)
+  const margenGlobal =
+    ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0;
+  const roasGlobal =
+    costoPublicidad > 0 ? ingresoTotal / costoPublicidad : 0;
+
   const rightSideKpis: Kpi[] = [
     {
       id: 'margen',
       label: 'Margen Bruto (%)',
-      value: ingresoTotal > 0 ? (utilidadTotal / ingresoTotal) * 100 : 0,
+      value: margenGlobal,
       unit: '%',
       color: '#22C55E',
     },
     {
-      id: 'roas',
-      label: 'ROAS',
-      value: totalCostosFijos > 0 ? ingresoTotal / totalCostosFijos : 0,
+      id: 'roas-global',
+      label: 'ROAS global (ingreso / ads)',
+      value: roasGlobal,
       unit: 'x',
       color: '#00BCD4',
     },
@@ -543,7 +581,9 @@ const DashboardHome: React.FC = () => {
     },
   ];
 
-  // Ordenar ventas por fecha y tomar las últimas 50
+  const healthStatus = getHealthStatus(margenGlobal, roasGlobal);
+
+  // Listas para tablas
   const ventasOrdenadas = [...ventas].sort((a, b) => {
     const da = new Date(String(a['Fecha'] ?? a['fecha'] ?? '')).getTime() || 0;
     const db = new Date(String(b['Fecha'] ?? b['fecha'] ?? '')).getTime() || 0;
@@ -551,6 +591,8 @@ const DashboardHome: React.FC = () => {
   });
 
   const ventasTabla = ventasOrdenadas.slice(0, 50);
+  const topAds = buildTopAds(ventas).slice(0, 10);
+  const topProducts = buildTopProducts(ventas).slice(0, 10);
 
   return (
     <Layout>
@@ -559,30 +601,274 @@ const DashboardHome: React.FC = () => {
 
       {!loading && !error && (
         <>
-         
-     <DateRangeBar
+          {/* Barra de fechas + tarjetas HOY */}
+          <DateRangeBar
             margenHoy={margenBrutoHoy}
             roasHoy={roasHoy}
             ventasHoy={ventasCantidadHoy}
+            totalOrdenes={totalOrdenes}
           />
 
-          {/* Barra KPI principal */}
+          {/* KPIs principales */}
           <KpiGrid kpis={kpis} />
 
-          {/* Gauges estilo WordOps */}
+          {/* TOP 10 */}
           <div
-            className="status-kpis-grid"
+            className="card top-ads-section"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 24,
-              marginBottom: 24,
               marginTop: 24,
+              padding: 16,
+              background: '#ffffff',
+              borderRadius: 16,
+              boxShadow: '0 4px 20px rgba(15, 23, 42, 0.05)',
             }}
           >
-            {kpis.slice(0, 4).map((kpi) => (
-              <GaugeCard key={kpi.id} kpi={kpi} />
-            ))}
+            <div
+              className="card-title"
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: 8,
+              }}
+            >
+
+<div
+  className="card-title"
+  style={{
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0f172a',
+    marginBottom: 4,
+  }}
+>
+  Desempeño de ventas
+</div>
+
+<p
+  style={{
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 8,
+  }}
+>
+  Identifica qué anuncios o productos concentran el mayor porcentaje
+  del ingreso en el rango de fechas seleccionado.
+</p>
+
+
+
+
+              Desempeño de ventas
+            </div>
+
+            {/* PESTAÑAS */}
+            <div
+              style={{
+                display: 'inline-flex',
+                borderRadius: 999,
+                background: '#e2e8f0',
+                padding: 2,
+                marginBottom: 12,
+              }}
+            >
+              <button
+                onClick={() => setTopTab('anuncios')}
+                style={{
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  background:
+                    topTab === 'anuncios' ? '#ffffff' : 'transparent',
+                  color: topTab === 'anuncios' ? '#0f172a' : '#64748b',
+                  fontWeight: topTab === 'anuncios' ? 600 : 500,
+                }}
+              >
+                Por anuncio
+              </button>
+              <button
+                onClick={() => setTopTab('productos')}
+                style={{
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  background:
+                    topTab === 'productos' ? '#ffffff' : 'transparent',
+                  color: topTab === 'productos' ? '#0f172a' : '#64748b',
+                  fontWeight: topTab === 'productos' ? 600 : 500,
+                }}
+              >
+                Por producto
+              </button>
+            </div>
+
+            {topTab === 'anuncios' ? (
+              topAds.length === 0 ? (
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: '#64748B',
+                    marginTop: 8,
+                  }}
+                >
+                  Aún no hay datos suficientes para calcular el Top 10 de
+                  anuncios.
+                </p>
+              ) : (
+                <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 12,
+                      minWidth: 800,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: '#f8fafc',
+                          borderBottom: '1px solid #e2e8f0',
+                        }}
+                      >
+                        <th style={thStyle}>#</th>
+                        <th style={thStyle}>ID Anuncio</th>
+                        <th style={thStyle}>Ventas</th>
+                        <th style={thStyle}>Ingreso total</th>
+                        <th style={thStyle}>% ingreso total</th>
+                        <th style={thStyle}>Utilidad total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topAds.map((ad, index) => {
+                        const share =
+                          ingresoTotal > 0
+                            ? (ad.totalRevenue / ingresoTotal) * 100
+                            : 0;
+
+                        return (
+                          <tr
+                            key={ad.adId + index}
+                            style={{
+                              borderBottom: '1px solid #e2e8f0',
+                              background:
+                                index === 0
+                                  ? '#eff6ff'
+                                  : index % 2 === 0
+                                  ? '#ffffff'
+                                  : '#f9fafb',
+                            }}
+                          >
+                            <td style={{ ...tdStyle, textAlign: 'center' }}>
+                              {index + 1}
+                            </td>
+                            <td style={tdStyle}>{ad.adId}</td>
+                            <td style={{ ...tdStyle, textAlign: 'center' }}>
+                              {ad.totalSales.toLocaleString('es-CO')}
+                            </td>
+                            <td style={{ ...tdStyle, textAlign: 'right' }}>
+                              {formatCurrency(ad.totalRevenue)}
+                            </td>
+                            <td style={{ ...tdStyle, textAlign: 'right' }}>
+                              {`${share.toLocaleString('es-CO', {
+                                maximumFractionDigits: 1,
+                              })} %`}
+                            </td>
+                            <td style={{ ...tdStyle, textAlign: 'right' }}>
+                              {formatCurrency(ad.totalProfit)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : topProducts.length === 0 ? (
+              <p
+                style={{
+                  fontSize: 13,
+                  color: '#64748B',
+                  marginTop: 8,
+                }}
+              >
+                Aún no hay datos suficientes para calcular el Top 10 de
+                productos.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: 12,
+                    minWidth: 800,
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <th style={thStyle}>#</th>
+                      <th style={thStyle}>Producto</th>
+                      <th style={thStyle}>Ventas</th>
+                      <th style={thStyle}>Ingreso total</th>
+                      <th style={thStyle}>% ingreso total</th>
+                      <th style={thStyle}>Utilidad total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topProducts.map((p, index) => {
+                      const share =
+                        ingresoTotal > 0
+                          ? (p.totalRevenue / ingresoTotal) * 100
+                          : 0;
+
+                      return (
+                        <tr
+                          key={p.productName + index}
+                          style={{
+                            borderBottom: '1px solid #e2e8f0',
+                            background:
+                              index === 0
+                                ? '#eff6ff'
+                                : index % 2 === 0
+                                ? '#ffffff'
+                                : '#f9fafb',
+                          }}
+                        >
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            {index + 1}
+                          </td>
+                          <td style={tdStyle}>{p.productName}</td>
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            {p.totalSales.toLocaleString('es-CO')}
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'right' }}>
+                            {formatCurrency(p.totalRevenue)}
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'right' }}>
+                            {`${share.toLocaleString('es-CO', {
+                              maximumFractionDigits: 1,
+                            })} %`}
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'right' }}>
+                            {formatCurrency(p.totalProfit)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Gráfico grande + Dona + indicadores */}
@@ -592,6 +878,7 @@ const DashboardHome: React.FC = () => {
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
               gap: 24,
+              marginTop: 24,
             }}
           >
             {/* Columna izquierda: Bar */}
@@ -603,7 +890,6 @@ const DashboardHome: React.FC = () => {
                 Tendencia Mensual de Utilidad
               </div>
               <div style={{ height: 380 }}>
-                {/* Dummy data temporal */}
                 <Bar
                   data={{
                     labels: ['Ene', 'Feb', 'Mar'],
@@ -620,7 +906,7 @@ const DashboardHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna derecha: Dona + badges */}
+            {/* Columna derecha: Dona + indicadores */}
             <div
               className="status-and-donut"
               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
@@ -665,22 +951,77 @@ const DashboardHome: React.FC = () => {
                     >
                       {kpi.currency
                         ? `$ ${kpi.value.toLocaleString('es-CO')}`
+                        : kpi.unit === '%'
+                        ? `${kpi.value.toLocaleString('es-CO', {
+                            maximumFractionDigits: 1,
+                          })}%`
+                        : kpi.unit === 'x'
+                        ? `${kpi.value.toLocaleString('es-CO', {
+                            maximumFractionDigits: 2,
+                          })}x`
                         : kpi.value.toLocaleString('es-CO')}
-                      {kpi.unit ?? ''}
                     </span>
                   </div>
                 ))}
+
+                {/* HEALTH SCORE */}
+                <div
+                  style={{
+                    marginTop: 10,
+                    paddingTop: 8,
+                    borderTop: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#64748b',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Health score de la cuenta
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: healthStatus.color,
+                      }}
+                    >
+                      {healthStatus.label} · {healthStatus.score}/100
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#64748b',
+                        textAlign: 'right',
+                        maxWidth: 230,
+                      }}
+                    >
+                      {healthStatus.comment}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Tabla ejecutiva de ventas (todo el ancho, con buen margen abajo) */}
+          {/* Tabla ejecutiva de ventas */}
           <div
             className="card detail-table-section"
             style={{
               padding: 16,
               marginTop: 24,
-              marginBottom: 48, // margen inferior para despegar del footer
+              marginBottom: 48,
               background: '#ffffff',
             }}
           >

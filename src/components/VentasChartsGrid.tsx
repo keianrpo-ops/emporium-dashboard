@@ -1,4 +1,3 @@
-// src/components/VentasChartsGrid.tsx
 import React, { useMemo } from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import {
@@ -9,33 +8,26 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  Title,
 } from 'chart.js';
 
-// 🔹 Registro obligatorio de los elementos de Chart.js
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export interface VentaRow {
   [key: string]: any;
   Fecha?: string;
   ID_Venta?: string;
   Producto?: string;
-  Cantidad?: number | string;
   Valor_Venta?: number | string;
   Metodo_Pago?: string;
   Canal_Venta?: string;
   Ciudad?: string;
-  Cliente?: string;
-  Telefono?: string;
-  Plataforma_Ads?: string;
 }
 
 const toNumber = (value: any): number => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
-    const normalized = value
-      .replace(/[\s$]/g, '')
-      .replace(/\./g, '')
-      .replace(',', '.');
+    const normalized = value.replace(/[\s$]/g, '').replace(/\./g, '').replace(',', '.');
     const n = Number(normalized);
     return Number.isNaN(n) ? 0 : n;
   }
@@ -47,215 +39,92 @@ interface Props {
 }
 
 const VentasChartsGrid: React.FC<Props> = ({ ventas }) => {
-  // ========= Agregados para las gráficas =========
 
-  // Ventas por canal (Shopify, WhatsApp, etc) – por ingreso
+  // --- DATOS ---
   const ventasPorCanal = useMemo(() => {
     const acc: Record<string, number> = {};
     ventas.forEach((v) => {
-      const canal = (v.Canal_Venta || 'Sin canal') as string;
+      const canal = (v.Canal_Venta || 'Otro') as string;
       acc[canal] = (acc[canal] || 0) + toNumber(v.Valor_Venta);
     });
     return acc;
   }, [ventas]);
 
-  // Ventas por método de pago
   const ventasPorMetodoPago = useMemo(() => {
     const acc: Record<string, number> = {};
     ventas.forEach((v) => {
-      const metodo = (v.Metodo_Pago || 'Sin método') as string;
+      const metodo = (v.Metodo_Pago || 'Otro') as string;
       acc[metodo] = (acc[metodo] || 0) + toNumber(v.Valor_Venta);
     });
     return acc;
   }, [ventas]);
 
-  // Top 10 ciudades por ingreso
   const ventasPorCiudad = useMemo(() => {
     const acc: Record<string, number> = {};
     ventas.forEach((v) => {
-      const ciudad = (v.Ciudad || 'Sin ciudad') as string;
+      const ciudad = (v.Ciudad || 'Desconocido') as string;
       acc[ciudad] = (acc[ciudad] || 0) + toNumber(v.Valor_Venta);
     });
-
-    return Object.entries(acc)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+    return Object.entries(acc).sort((a, b) => b[1] - a[1]).slice(0, 10);
   }, [ventas]);
-
-  // ========= Configuración de datasets =========
 
   const canalLabels = Object.keys(ventasPorCanal);
   const canalData = Object.values(ventasPorCanal);
-
   const metodoLabels = Object.keys(ventasPorMetodoPago);
   const metodoData = Object.values(ventasPorMetodoPago);
+  const ciudadLabels = ventasPorCiudad.map(([c]) => c);
+  const ciudadData = ventasPorCiudad.map(([, v]) => v);
 
-  const ciudadLabels = ventasPorCiudad.map(([ciudad]) => ciudad);
-  const ciudadData = ventasPorCiudad.map(([, total]) => total);
+  const colors = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-  const donutColors = [
-    '#22c55e',
-    '#0ea5e9',
-    '#a855f7',
-    '#f97316',
-    '#eab308',
-    '#ec4899',
-    '#38bdf8',
-    '#4ade80',
-  ];
-
-  const donutHoverColors = [
-    '#4ade80',
-    '#38bdf8',
-    '#c084fc',
-    '#fb923c',
-    '#facc15',
-    '#f472b6',
-    '#7dd3fc',
-    '#86efac',
-  ];
-
-  const donutOptions: any = {
+  const commonOptions = {
     responsive: true,
-    maintainAspectRatio: false,
-    cutout: '68%', // efecto dona
+    maintainAspectRatio: false, // CLAVE PARA QUE FUNCIONE EN HEIGHT FIJO
     plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: '#e5e7eb',
-          boxWidth: 14,
-        },
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || '';
-            const value = context.raw || 0;
-            return `${label}: $${value.toLocaleString('es-CO')}`;
-          },
-        },
-      },
+      legend: { position: 'bottom' as const, labels: { boxWidth: 12 } },
     },
   };
 
-  const barOptions: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context: any) =>
-            `$${(context.raw || 0).toLocaleString('es-CO')}`,
-        },
-      },
-    },
+  const barOptions = {
+    ...commonOptions,
+    plugins: { legend: { display: false } },
     scales: {
-      x: {
-        ticks: {
-          color: '#9ca3af',
-          maxRotation: 45,
-          minRotation: 0,
-        },
-        grid: { display: false },
-      },
-      y: {
-        ticks: {
-          color: '#9ca3af',
-          callback: (value: any) =>
-            `$${Number(value).toLocaleString('es-CO')}`,
-        },
-        grid: {
-          color: 'rgba(148, 163, 184, 0.15)',
-        },
-      },
-    },
+        x: { grid: { display: false } },
+        y: { grid: { color: '#f1f5f9' }, border: { display: false } }
+    }
   };
 
-  const donutCanalData = {
-    labels: canalLabels,
-    datasets: [
-      {
-        data: canalData,
-        backgroundColor: canalLabels.map(
-          (_, i) => donutColors[i % donutColors.length],
-        ),
-        hoverBackgroundColor: canalLabels.map(
-          (_, i) => donutHoverColors[i % donutHoverColors.length],
-        ),
-        borderWidth: 2,
-        borderColor: '#020617',
-        hoverOffset: 6,
-      },
-    ],
-  };
-
-  const donutMetodoData = {
-    labels: metodoLabels,
-    datasets: [
-      {
-        data: metodoData,
-        backgroundColor: metodoLabels.map(
-          (_, i) => donutColors[i % donutColors.length],
-        ),
-        hoverBackgroundColor: metodoLabels.map(
-          (_, i) => donutHoverColors[i % donutHoverColors.length],
-        ),
-        borderWidth: 2,
-        borderColor: '#020617',
-        hoverOffset: 6,
-      },
-    ],
-  };
-
-  const barCiudadData = {
-    labels: ciudadLabels,
-    datasets: [
-      {
-        data: ciudadData,
-        backgroundColor: 'rgba(56, 189, 248, 0.9)',
-        borderRadius: 6,
-        borderSkipped: false,
-      },
-    ],
-  };
+  const dataDonaCanal = { labels: canalLabels, datasets: [{ data: canalData, backgroundColor: colors, borderWidth: 0 }] };
+  const dataDonaPago = { labels: metodoLabels, datasets: [{ data: metodoData, backgroundColor: colors.slice().reverse(), borderWidth: 0 }] };
+  const dataBarraCiudad = { labels: ciudadLabels, datasets: [{ label: 'Ventas', data: ciudadData, backgroundColor: '#0ea5e9', borderRadius: 4 }] };
 
   return (
-    <div className="charts-grid">
-      {/* Dona 1: Ingresos por canal de venta */}
-      <div className="chart-card">
-        <div className="chart-card-title">Ingresos por canal de venta</div>
-        <div className="donut-wrapper">
-          {canalData.length > 0 ? (
-            <Doughnut data={donutCanalData} options={donutOptions} />
-          ) : (
-            <p className="chart-empty">Aún no hay datos de canales.</p>
-          )}
+    <div className="flex flex-col gap-6 w-full">
+      {/* 1. BARRAS */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase">Top 10 Ciudades</h3>
+        {/* LA JAULA: Height fijo + Relative */}
+        <div style={{ height: '300px', position: 'relative', width: '100%' }}>
+           {ciudadData.length > 0 ? <Bar data={dataBarraCiudad} options={barOptions} /> : <p>Sin datos</p>}
         </div>
       </div>
 
-      {/* Dona 2: Ingresos por método de pago */}
-      <div className="chart-card">
-        <div className="chart-card-title">Ingresos por método de pago</div>
-        <div className="donut-wrapper">
-          {metodoData.length > 0 ? (
-            <Doughnut data={donutMetodoData} options={donutOptions} />
-          ) : (
-            <p className="chart-empty">Aún no hay datos de métodos de pago.</p>
-          )}
+      {/* 2. DONAS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase text-center">Canales</h3>
+          {/* LA JAULA: Height fijo + Relative */}
+          <div style={{ height: '250px', position: 'relative', width: '100%' }}>
+            {canalData.length > 0 ? <Doughnut data={dataDonaCanal} options={commonOptions} /> : <p>Sin datos</p>}
+          </div>
         </div>
-      </div>
 
-      {/* Barras: Top 10 ciudades por ingreso */}
-      <div className="chart-card chart-card--tall">
-        <div className="chart-card-title">Top 10 ciudades por ingreso</div>
-        <div className="bar-wrapper">
-          {ciudadData.length > 0 ? (
-            <Bar data={barCiudadData} options={barOptions} />
-          ) : (
-            <p className="chart-empty">Aún no hay datos de ciudades.</p>
-          )}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase text-center">Pagos</h3>
+          {/* LA JAULA: Height fijo + Relative */}
+          <div style={{ height: '250px', position: 'relative', width: '100%' }}>
+             {metodoData.length > 0 ? <Doughnut data={dataDonaPago} options={commonOptions} /> : <p>Sin datos</p>}
+          </div>
         </div>
       </div>
     </div>
